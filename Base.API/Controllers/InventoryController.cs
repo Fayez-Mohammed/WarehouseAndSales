@@ -226,7 +226,7 @@ public class InventoryController(IUnitOfWork unit
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UpdateInventoryQuantity([FromQuery] string productId, [FromQuery] int quantity)
+    public async Task<IActionResult> UpdateInventoryQuantity([FromQuery] string productId, [FromQuery] int quantity, [FromQuery] string supplierId)
     {
         if (string.IsNullOrEmpty(productId))
             return BadRequest(new ApiResponseDTO { Message = "Invalid ID" });
@@ -241,7 +241,18 @@ public class InventoryController(IUnitOfWork unit
             if (string.IsNullOrEmpty(product.Name))
                 return NotFound();
 
+            product.SupplierId = supplierId;
             product.CurrentStockQuantity += quantity;
+
+            var StockTransaction = new StockTransaction()
+            {
+                ProductId = productId,
+                Quantity = quantity,
+                Type = DAL.Models.SystemModels.Enums.TransactionType.StockIn,
+                DateOfCreation = DateTime.UtcNow
+            };
+
+            await unit.Repository<StockTransaction>().AddAsync(StockTransaction);
 
             var result = await unit.CompleteAsync();
 
