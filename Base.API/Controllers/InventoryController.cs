@@ -105,11 +105,12 @@ public class InventoryController(IUnitOfWork unit
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> CreateProduct([FromBody] ProductDto productCreateDto)
+    public async Task<IActionResult> CreateProduct([FromQuery]string SupplierId,[FromBody] ProductDto productCreateDto)
     {
         var validate = await productValidator.ValidateAsync(productCreateDto);
         if (!validate.IsValid)
             return BadRequest(new ApiResponseDTO { Message = "Invalid Input parameters" });
+       
         try
         {
             var product = new Product()
@@ -120,6 +121,9 @@ public class InventoryController(IUnitOfWork unit
                 BuyPrice = productCreateDto.BuyPrice,
                 Description = productCreateDto.Description,
                 CurrentStockQuantity = productCreateDto.Quantity,
+                SupplierId= SupplierId
+
+
             };
 
             await unit.Repository<Product>().AddAsync(product);

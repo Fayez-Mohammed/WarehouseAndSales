@@ -10,8 +10,8 @@ public class SupplierPostValidation : AbstractValidator<SupplierPostDto>
         RuleFor(x=>x.Name)
             .NotEmpty()
             .MaximumLength(250);
-        RuleFor(x => x.ContactInfo)
-            .MaximumLength(250);
+      //  RuleFor(x => x.ContactInfo)
+    //        .MaximumLength(250);
         
         RuleFor(x => x.Address)
             .MaximumLength(250);

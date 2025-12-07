@@ -18,7 +18,9 @@ namespace Base.DAL.Models.SystemModels
         public  decimal BuyPrice { get; set; } // Cost
         public  decimal SellPrice { get; set; } // Price for Customer
         public int CurrentStockQuantity { get; set; }
-       // public virtual Inventory Inventory { get; set; }
+        public string? SupplierId { get; set; }
+        // public virtual Inventory Inventory { get; set; }
+        public virtual Supplier Supplier { get; set; }
         public virtual ICollection<StockTransaction> StockTransactions { get; set; }
     }
 }

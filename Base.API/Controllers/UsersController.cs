@@ -7,8 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Base.API.Controllers
 {
-    [ApiExplorerSettings(IgnoreApi = true)]
-    [Authorize(Roles = "SystemAdmin")]
+   // [ApiExplorerSettings(IgnoreApi = true)]
+    [Authorize(Roles = "StoreManager,SystemAdmin")]
     [Authorize(Policy = "ActiveUserOnly")]
     [Route("api/users")]
     [ApiController]
@@ -46,8 +46,9 @@ namespace Base.API.Controllers
 
         // POST: api/users
         [HttpPost("create")]
-        public async Task<ActionResult<UserDto>> Create(CreateUserRequest request)
+        public async Task<ActionResult<UserDto>> Create([FromQuery] UserTypes? userType,[FromBody] CreateUserRequest request)
         {
+            
             if (request == null) throw new ArgumentNullException(nameof(request));
             var user = await _userProfileService.CreateAsync(request);
             return Ok(user);

@@ -12,6 +12,17 @@ namespace Base.API.DTOs
         [MinLength(1, ErrorMessage = "Order must contain at least one item.")]
         public List<CreateOrderItemDto> Items { get; set; }
     }
+    public class CreateOrderByManagerDto
+    {
+        // Optional: The Sales Rep ID can be provided if a rep places the order for a customer.
+        // If null, it can be assigned later during the confirmation process.
+        public string? SalesRepId { get; set; }
+        public string CustomerId { get; set; }
+
+        [Required]
+        [MinLength(1, ErrorMessage = "Order must contain at least one item.")]
+        public List<CreateOrderItemDto> Items { get; set; }
+    }
 
     public class CreateOrderItemDto
     {

@@ -20,11 +20,13 @@ namespace Base.Services.Implementations
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<ApplicationUser> _userManager;
-
-        public UserProfileService(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager)
+        private readonly RoleManager<IdentityRole> _roleManager;
+        public UserProfileService(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager,RoleManager<IdentityRole> roleManager)
         {
             _unitOfWork = unitOfWork;
             _userManager = userManager;
+            _roleManager = roleManager;
+
         }
 
         public async Task<UserDto?> GetByIdAsync(string id)
@@ -43,7 +45,9 @@ namespace Base.Services.Implementations
 
             if (!result.Succeeded)
                 throw new Exception(string.Join(", ", result.Errors.Select(e => e.Description)));
-
+            var roleResult = await _userManager.AddToRoleAsync(user, request.UserType.ToString());
+            if (!roleResult.Succeeded)
+                throw new Exception(string.Join(", ", roleResult.Errors.Select(e => e.Description)));
             return user.ToUserDto();
         }
         public async Task<UserDto?> UpdateAsync(string id, UpdateUserRequest request)

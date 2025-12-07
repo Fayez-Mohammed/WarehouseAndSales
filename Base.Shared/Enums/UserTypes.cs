@@ -14,5 +14,6 @@ namespace Base.Shared.Enums
         Customer,
         SalesRep,
         StoreManager,
+        Supplier
     }
 }

@@ -228,6 +228,7 @@ namespace Base.API.Controllers
 
             return Ok(new { Message = "Order Approved and Stock Deducted" });
         }
+      
         [HttpPut("ApproveOrderBySalesRep")]
         [Authorize(Roles = "SalesRep")]
         public async Task<IActionResult> ConfirmOrder([FromQuery] string orderId)
@@ -250,7 +251,55 @@ namespace Base.API.Controllers
                 return StatusCode(500, "Failed to confirm order.");
             return Ok(new { Message = $"Order With ID= [{order.Id}] confirmed by Sales Rep", CommissionAmount = order.CommissionAmount });
         }
+        //////////////////////////
 
+        [HttpPost("CreateOrderByStoreManagerByCustomerIdAndSalesRepId")]
+        [Authorize(Roles = "StoreManager")]
+        public async Task<IActionResult> CreateOrderByStoreManagerByCustomerIdAndSalesRepId([FromBody] CreateOrderByManagerDto dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+            // 1. Validate Customer
+            var customer = await userManager.FindByIdAsync(dto.CustomerId);
+            if (customer == null || !await userManager.IsInRoleAsync(customer, "Customer"))
+                return BadRequest("Invalid Customer ID.");
+            // 2. Prepare Order Items & Calculate Total
+            decimal totalAmount = 0;
+            var orderItems = new List<OrderItem>();
+            var productRepo = unitOfWork.Repository<Product>();
+            foreach (var itemDto in dto.Items)
+            {
+                var product = await productRepo.GetByIdAsync(itemDto.ProductId);
+                if (product == null)
+                    return BadRequest($"Product with ID {itemDto.ProductId} not found.");
+                // Calculate price for this line item
+                decimal itemTotal = product.SellPrice * itemDto.Quantity;
+                totalAmount += itemTotal;
+                // Create OrderItem (Price Snapshot)
+                orderItems.Add(new OrderItem
+                {
+                    ProductId = itemDto.ProductId,
+                    Quantity = itemDto.Quantity,
+                    UnitPrice = product.SellPrice // Capture price at moment of order
+                });
+            }
+            // 3. Create the Order Entity
+            var order = new Order
+            {
+                CustomerId = dto.CustomerId,
+                TotalAmount = totalAmount,
+                Status = OrderStatus.Confirmed, // Directly Confirmed
+                OrderItems = orderItems,      // EF Core will insert these automatically
+                SalesRepId = dto.SalesRepId,   // Optional, can be null
+                CommissionAmount = 0.1m * totalAmount
+            };
+            // 4. Save to Database
+            await unitOfWork.Repository<Order>().AddAsync(order);
+            var result = await unitOfWork.CompleteAsync();
+            if (result <= 0)
+                return StatusCode(500, "Failed to create order.");
+            return Ok(new { Message = "Order created and confirmed successfully", OrderId = order.Id });
+        }
 
         }
 }

@@ -41,7 +41,7 @@ namespace Base.Shared.DTOs
         public required string Email { get; set; } = string.Empty;
         [Required]
         public required string Password { get; set; } = string.Empty;
-        public UserTypes UserType { get; set; } = UserTypes.SystemAdmin; // default
+        public UserTypes UserType { get; set; } = UserTypes.Customer; // default
         public string? PhoneNumber { get; set; }
     }
 

@@ -9,7 +9,12 @@ public class SupplierPostDto
     public string Name { get; set; }
     [Required]
     [MaxLength(250)]
-    public string? ContactInfo { get; set; }
-    [MaxLength(250)]
     public string? Address { get; set; }
+
+
+    // User info
+    public string? Email { get; set; }
+    public string? Password { get; set; }
+    public string? PhoneNumber { get; set; }
+
 }
