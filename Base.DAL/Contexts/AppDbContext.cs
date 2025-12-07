@@ -95,6 +95,7 @@ namespace Base.DAL.Contexts
         public DbSet<SalesRepProfile> SalesRepProfiles { get; set; }
         public DbSet<CustomerProfile> CustomerProfiles { get; set; }
         public DbSet<EmployeeProfile> EmployeeProfiles { get; set; }
+        public DbSet<AccountantUserProfile> AccountantUserProfiles { get; set; }
         #endregion
 
         #region Warehouse Module DbSets
@@ -105,6 +106,7 @@ namespace Base.DAL.Contexts
         public DbSet<StockTransaction> StockTransactions { get; set; }
         public DbSet<Invoice> Invoices { get; set; }
         public DbSet<Inventory> Inventories { get; set; }
+        public DbSet<Expense> Expenses { get; set; }
         #endregion
     }
 }

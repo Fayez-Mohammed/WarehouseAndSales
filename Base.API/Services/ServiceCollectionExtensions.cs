@@ -240,6 +240,7 @@ namespace Base.API.Services
             services.AddScoped<ProductDtoValidation>();
             services.AddScoped<ProductUpdateDtoValidation>();
             services.AddScoped<SupplierPostValidation>();
+            services.AddScoped<AccountantPostDtoValidator>();
             // -----------------------
             // إذا كان لديك أي service صغيرة stateless → استخدم Transient
             // -----------------------

@@ -13,4 +13,15 @@ namespace Base.DAL.Models.SystemModels
         public decimal CreditLimit { get; set; } = 0; // If you allow credit
         public int LoyaltyPoints { get; set; }
     }
+
+
+
+
+
+
+
+
 }
+
+
+

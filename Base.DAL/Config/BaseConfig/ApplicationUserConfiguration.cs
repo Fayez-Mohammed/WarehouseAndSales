@@ -24,6 +24,8 @@ namespace Base.DAL.Config.BaseConfig
             builder.Property(u => u.Type).HasConversion(v => v.ToString(),
             v => (UserTypes)Enum.Parse(typeof(UserTypes), v));
 
+
+
             //builder.HasOne(u => u.Profile)
             //       .WithOne(p => p.User)
             //       .HasForeignKey<UserProfile>(p => p.UserId).OnDelete(DeleteBehavior.Cascade);
