@@ -8,6 +8,8 @@ using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using RepositoryProject.Specifications;
+using System.Security.Claims;
 
 [Route("api/[controller]")]
 [ApiController]
@@ -24,7 +26,11 @@ public class AccountantProfilesController : ControllerBase
         _userManager = userManager;
     }
 
-
+    /// <summary>
+    /// اضافة محاسب جديد
+    /// </summary>
+    /// <param name="accountantDto"></param>
+    /// <returns></returns>
     [HttpPost("AddAccountant")]
 
     public async Task<IActionResult> AddAccountant([FromBody] AccountantPostDto accountantDto)
@@ -98,6 +104,51 @@ public class AccountantProfilesController : ControllerBase
                 Data = new[] { ex.Message }
             });
         }
-    }
 
+    }
+    /// <summary>
+    /// جلب جميع المحاسبين
+    /// </summary>
+    /// <returns></returns>
+    [HttpGet("GetAllAccountants")]
+        public async Task<IActionResult> GetAllAccountants()
+        {
+            var accountants = await _unitOfWork.Repository<AccountantUserProfile>().ListAllAsync();
+           var  accountantDTOs= accountants.Select(a => new AccountantGetDto
+            {
+                Id = a.Id,
+                Name = a.User.FullName,
+                Email = a.User.Email,
+                PhoneNumber = a.User.PhoneNumber
+            }).ToList();
+        return Ok(accountants);
+        }
+
+    /// <summary>
+    /// جلب بيانات المحاسب الحالي
+    /// </summary>
+    /// <returns></returns>
+    [HttpGet("GetCurrentAccountant")]
+    public IActionResult GetCurrentAccountant()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId == null)
+        {
+            return Unauthorized(new ApiResponseDTO { Message = "User ID not found in token" });
+        }
+        var user = _userManager.FindByIdAsync(userId).Result;
+        if (user == null)
+        {
+            return NotFound(new ApiResponseDTO { Message = "User not found" });
+        }
+        var accountantDto = new AccountantGetDto
+        {
+            Id = user.Id,
+            Name = user.FullName,
+            Email = user.Email,
+            PhoneNumber = user.PhoneNumber
+        };
+        return Ok(accountantDto);
+    }
 }
+
