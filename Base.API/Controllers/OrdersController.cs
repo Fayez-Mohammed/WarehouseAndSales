@@ -24,8 +24,12 @@ namespace Base.API.Controllers
             this.unitOfWork = unitOfWork;
             this.userManager = userManager;
         }
+        /// <summary>
+        /// Gets all approved orders for the logged-in customer.   Not Used Currently
+        /// </summary>
+        /// <returns></returns>
         [HttpGet("GetAllApprovedOrdersForCustomer")]
-        [Authorize(Roles = "Customer")]
+      //  [Authorize(Roles = "Customer")]
         public async Task<IActionResult> GetAllApprovedOrdersForCustomer()
         {
             var customerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -44,9 +48,12 @@ namespace Base.API.Controllers
             });
             return Ok(approvedOrdersDto);
         }
-
-         [HttpGet("GetAllPendingOrdersForSalesRepoToConfirmLater")]
-        [Authorize(Roles = "SalesRep")]
+        /// <summary>
+        ///  Not Used Currently
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("GetAllPendingOrdersForSalesRepoToConfirmLater")]
+      //  [Authorize(Roles = "SalesRep")]
         public async Task<IActionResult> GetAllPendingOrdersForSalesRepoToConfirmLater()
         {
             var salesRepId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -66,15 +73,15 @@ namespace Base.API.Controllers
             });
             return Ok(pendingOrdersDto);
         }
-        
+
         /// <summary>
-        /// Creates a new order for the logged-in customer.
+        /// Creates a new order for the logged-in customer.  Not Used Currently
         /// Status defaults to 'Pending'.
         /// </summary>
         /// <param name="dto">Order details including items and optional SalesRepId.</param>
         /// <returns>The created Order ID.</returns>
         [HttpPost]
-        [Authorize(Roles = "Customer")] // Ensure only Customers can place orders
+     //   [Authorize(Roles = "Customer")] // Ensure only Customers can place orders
         public async Task<IActionResult> CreateOrder([FromBody] CreateOrderDto dto)
         {
             if (!ModelState.IsValid)
@@ -228,7 +235,11 @@ namespace Base.API.Controllers
 
             return Ok(new { Message = "Order Approved and Stock Deducted" });
         }
-      
+        /// <summary>
+        ///  Not Used Currently
+        /// </summary>
+        /// <param name="orderId"></param>
+        /// <returns></returns>
         [HttpPut("ApproveOrderBySalesRep")]
         [Authorize(Roles = "SalesRep")]
         public async Task<IActionResult> ConfirmOrder([FromQuery] string orderId)
@@ -240,7 +251,7 @@ namespace Base.API.Controllers
             if (order.Status != OrderStatus.Pending)
                 return BadRequest("Only Pending orders can be confirmed.");
             // 2. Calculate Commission (e.g., 10% of TotalAmount)
-            
+
             decimal commissionRate = 0.10m; // 10%
             order.CommissionAmount = order.TotalAmount * commissionRate;
             order.Status = OrderStatus.Confirmed;
@@ -252,7 +263,11 @@ namespace Base.API.Controllers
             return Ok(new { Message = $"Order With ID= [{order.Id}] confirmed by Sales Rep", CommissionAmount = order.CommissionAmount });
         }
         //////////////////////////
-
+        /// <summary>
+        /// Creates and directly confirms an order on behalf of a customer.
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <returns></returns>
         [HttpPost("CreateOrderByStoreManagerByCustomerIdAndSalesRepId")]
         [Authorize(Roles = "StoreManager")]
         public async Task<IActionResult> CreateOrderByStoreManagerByCustomerIdAndSalesRepId([FromBody] CreateOrderByManagerDto dto)

@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Base.API.Controllers
 {
    // [ApiExplorerSettings(IgnoreApi = true)]
-    [Authorize(Roles = "StoreManager,SystemAdmin")]
+    [Authorize(Roles = "StoreManager,SystemAdmin,Accountant")]
     [Authorize(Policy = "ActiveUserOnly")]
     [Route("api/users")]
     [ApiController]
@@ -20,7 +20,15 @@ namespace Base.API.Controllers
         {
             _userProfileService = userProfileService;
         }
-
+        /// <summary>
+        /// Get all users with optional filtering and pagination
+        /// </summary>
+        /// <param name="search"></param>
+        /// <param name="userType"></param>
+        /// <param name="isActive"></param>
+        /// <param name="page"></param>
+        /// <param name="pageSize"></param>
+        /// <returns></returns>
         // GET: api/users
         [HttpGet("list")]
         public async Task<ActionResult<UserListDto>> GetAll(
@@ -33,7 +41,12 @@ namespace Base.API.Controllers
             var result = await _userProfileService.GetAllAsync(search, userType, isActive, page, pageSize);
             return Ok(result);
         }
-
+        /// <summary>
+        /// Get user by ID
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
         // GET: api/users/{id}
         [HttpGet("get-user")]
         public async Task<ActionResult<UserDto>> GetById(string id)
@@ -43,7 +56,13 @@ namespace Base.API.Controllers
             if (user == null) return NotFound();
             return Ok(user);
         }
-
+        /// <summary>
+        /// Create a new user
+        /// </summary>
+        /// <param name="userType"></param>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
         // POST: api/users
         [HttpPost("create")]
         public async Task<ActionResult<UserDto>> Create([FromQuery] UserTypes? userType,[FromBody] CreateUserRequest request)
@@ -53,7 +72,13 @@ namespace Base.API.Controllers
             var user = await _userProfileService.CreateAsync(request);
             return Ok(user);
         }
-
+        /// <summary>
+        /// Update an existing user
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
         // PUT: api/users/{id}
         [HttpPut("update")]
         public async Task<ActionResult<UserDto>> Update(string id, UpdateUserRequest request)
@@ -64,7 +89,12 @@ namespace Base.API.Controllers
             if (user == null) return NotFound();
             return Ok(user);
         }
-
+        /// <summary>
+        /// Toggle user active status
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
         // PATCH: api/users/{id}/toggle-active
         [HttpPatch("toggle-active")]
         public async Task<IActionResult> ToggleActive(string id)
@@ -74,7 +104,12 @@ namespace Base.API.Controllers
             if (!success) return Forbid();
             return Ok();
         }
-
+        /// <summary>
+        /// Delete a user
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
         // DELETE: api/users/{id}
         [HttpDelete("delete")]
         public async Task<IActionResult> Delete(string id)
@@ -84,7 +119,13 @@ namespace Base.API.Controllers
             if (!success) return Forbid();
             return Ok();
         }
-
+        /// <summary>
+        /// Change user password
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="newPassword"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
         // PATCH: api/users/{id}/change-password
         [HttpPatch("change-password")]
         public async Task<IActionResult> ChangePassword(string id, [FromBody] string newPassword)

@@ -13,6 +13,7 @@ namespace Base.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Roles = "SystemAdmin")]
 public class SupplierController : ControllerBase
 {
     private readonly IUnitOfWork _unit;
@@ -28,8 +29,13 @@ public class SupplierController : ControllerBase
         _postValidator = postValidator;
         _userManager = userManager;
     }
+    /// <summary>
+    /// Get Suppliers with pagination
+    /// </summary>
+    /// <param name="skip"></param>
+    /// <param name="take"></param>
+    /// <returns></returns>
 
-  
     [HttpGet("suppliers")]
     public async Task<IActionResult> GetSuppliers(
         [FromQuery] int skip = 0,
@@ -63,7 +69,11 @@ public class SupplierController : ControllerBase
         }
     }
 
-
+    /// <summary>
+    /// Add a new Supplier
+    /// </summary>
+    /// <param name="supplierDto"></param>
+    /// <returns></returns>
     [HttpPost("suppliers")]
     public async Task<IActionResult> AddSupplier([FromBody] SupplierPostDto supplierDto)
     {

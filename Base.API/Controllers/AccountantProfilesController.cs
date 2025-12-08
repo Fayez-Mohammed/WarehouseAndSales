@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 
 [Route("api/[controller]")]
 [ApiController]
-//[Authorize(Roles = "SystemAdmin")]
+[Authorize(Roles = "SystemAdmin")]
 public class AccountantProfilesController : ControllerBase
 {
     private readonly IUnitOfWork _unitOfWork;
