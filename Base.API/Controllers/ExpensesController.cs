@@ -44,7 +44,7 @@ namespace Base.API.Controllers
                 Amount = dto.Amount,
                 Description = dto.Description,
                 AccountantUserId = accountantUserId,
-                CreatedAt = DateTime.UtcNow
+                //CreatedAt = DateTime.UtcNow
             };
 
             await _unitOfWork.Repository<Expense>().AddAsync(expense);
@@ -60,7 +60,7 @@ namespace Base.API.Controllers
                 Id = expense.Id,
                 Amount = expense.Amount,
                 Description = expense.Description,
-                CreatedAt = expense.CreatedAt,
+              //  CreatedAt = expense.CreatedAt,
                 AccountantUserId = accountantUserId,
                 AccountantName = accountant?.UserName ?? "غير معروف"
             };
@@ -84,7 +84,7 @@ namespace Base.API.Controllers
                 Id = e.Id,
                 Amount = e.Amount,
                 Description = e.Description,
-                CreatedAt = e.CreatedAt,
+                //CreatedAt = e.CreatedAt,
                 AccountantUserId = e.AccountantUserId,
                 AccountantName = e.AccountantUser?.UserName
             });
@@ -109,7 +109,7 @@ namespace Base.API.Controllers
                 Id = e.Id,
                 Amount = e.Amount,
                 Description = e.Description,
-                CreatedAt = e.CreatedAt,
+               // CreatedAt = e.CreatedAt,
                 AccountantUserId = e.AccountantUserId,
                 AccountantName = e.AccountantUser?.UserName
             });
@@ -133,12 +133,21 @@ namespace Base.API.Controllers
                 Id = e.Id,
                 Amount = e.Amount,
                 Description = e.Description,
-                CreatedAt = e.CreatedAt,
+              //  CreatedAt = e.CreatedAt,
                 AccountantUserId = e.AccountantUserId,
                 AccountantName = e.AccountantUser?.UserName
             });
 
             return Ok(result);
         }
+
+
+       
+     
+            
+
+
+
+
     }
 }

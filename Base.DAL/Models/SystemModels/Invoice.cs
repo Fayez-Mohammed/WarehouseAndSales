@@ -10,7 +10,10 @@ namespace Base.DAL.Models.SystemModels
         // The person receiving the invoice (Customer OR SalesRep)
         public string RecipientName { get; set; }
         public decimal Amount { get; set; }
-        public DateTime GeneratedDate { get; set; }
+        public decimal PaidAmount { get; set; } = 0m;  // الفلوس اللي العميل دفعها
+        public decimal RemainingAmount { get; set; } = 0m;  // المديونية أو الباقي
+
+     //   public DateTime GeneratedDate { get; set; }
 
         public string OrderId { get; set; }
         public virtual Order Order { get; set; }

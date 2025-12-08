@@ -203,7 +203,8 @@ namespace Base.API.Controllers
                 Type = InvoiceType.CustomerInvoice,
                 RecipientName = order.Customer.FullName,
                 Amount = order.TotalAmount,
-                GeneratedDate = DateTime.UtcNow
+                RemainingAmount = order.TotalAmount,
+                DateOfCreation = DateTime.UtcNow
             };
             await unitOfWork.Repository<Invoice>().AddAsync(custInvoice);
 
@@ -218,7 +219,8 @@ namespace Base.API.Controllers
                     Type = InvoiceType.CommissionInvoice,
                     RecipientName = salesRep?.FullName ?? "Sales Rep",
                     Amount = order.CommissionAmount,
-                    GeneratedDate = DateTime.UtcNow
+                    RemainingAmount = order.CommissionAmount,
+                    DateOfCreation = DateTime.UtcNow
                 };
                 await unitOfWork.Repository<Invoice>().AddAsync(commInvoice);
             }
@@ -240,7 +242,7 @@ namespace Base.API.Controllers
         /// </summary>
         /// <param name="orderId"></param>
         /// <returns></returns>
-        [HttpPut("ApproveOrderBySalesRep")]
+        [HttpPut("Approve_Order_By_SalesRep")]
         [Authorize(Roles = "SalesRep")]
         public async Task<IActionResult> ConfirmOrder([FromQuery] string orderId)
         {
@@ -268,7 +270,7 @@ namespace Base.API.Controllers
         /// </summary>
         /// <param name="dto"></param>
         /// <returns></returns>
-        [HttpPost("CreateOrderByStoreManagerByCustomerIdAndSalesRepId")]
+        [HttpPost("Create_Order_By_Store_Manager_By_Customer_Id_And_SalesRepId")]
         [Authorize(Roles = "StoreManager")]
         public async Task<IActionResult> CreateOrderByStoreManagerByCustomerIdAndSalesRepId([FromBody] CreateOrderByManagerDto dto)
         {

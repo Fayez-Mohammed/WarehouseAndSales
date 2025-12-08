@@ -18,7 +18,7 @@ public class ExpenseConfiguration : IEntityTypeConfiguration<Expense>
                .HasMaxLength(500)
                .IsRequired();
 
-        builder.Property(e => e.CreatedAt)
+        builder.Property(e => e.DateOfCreation)
                .HasDefaultValueSql("GETUTCDATE()")
                .IsRequired();
 

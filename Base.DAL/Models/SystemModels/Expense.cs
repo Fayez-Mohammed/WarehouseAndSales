@@ -8,7 +8,7 @@ namespace Base.DAL.Models.SystemModels
     {
         public decimal Amount { get; set; }
         public string Description { get; set; }
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        //public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         // Accountant User (who created this expense)
         public string? AccountantUserId { get; set; }
