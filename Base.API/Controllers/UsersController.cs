@@ -21,7 +21,7 @@ namespace Base.API.Controllers
             _userProfileService = userProfileService;
         }
         /// <summary>
-        /// Get all users with optional filtering and pagination
+        /// جلب جميع المستخدمين مع خيارات التصفية والصفحة
         /// </summary>
         /// <param name="search"></param>
         /// <param name="userType"></param>
@@ -42,7 +42,7 @@ namespace Base.API.Controllers
             return Ok(result);
         }
         /// <summary>
-        /// Get user by ID
+        /// جلب مستخدم بواسطة المعرف
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
@@ -57,7 +57,7 @@ namespace Base.API.Controllers
             return Ok(user);
         }
         /// <summary>
-        /// Create a new user
+        /// انشذاء مستخدم جديد
         /// </summary>
         /// <param name="userType"></param>
         /// <param name="request"></param>
@@ -73,7 +73,7 @@ namespace Base.API.Controllers
             return Ok(user);
         }
         /// <summary>
-        /// Update an existing user
+        ///  تحديث بيانات المستخدم
         /// </summary>
         /// <param name="id"></param>
         /// <param name="request"></param>
@@ -90,7 +90,7 @@ namespace Base.API.Controllers
             return Ok(user);
         }
         /// <summary>
-        /// Toggle user active status
+        ///  عكس حالة التفعيل للمستخدم
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
@@ -105,7 +105,7 @@ namespace Base.API.Controllers
             return Ok();
         }
         /// <summary>
-        /// Delete a user
+        ///  حذف مستخدم
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
@@ -120,7 +120,7 @@ namespace Base.API.Controllers
             return Ok();
         }
         /// <summary>
-        /// Change user password
+        /// تغيير كلمة مرور المستخدم
         /// </summary>
         /// <param name="id"></param>
         /// <param name="newPassword"></param>

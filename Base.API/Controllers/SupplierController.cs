@@ -30,7 +30,7 @@ public class SupplierController : ControllerBase
         _userManager = userManager;
     }
     /// <summary>
-    /// Get Suppliers with pagination
+    /// جلب جميع الموردين مع الترحيل للمعاملات الخاصة بهم
     /// </summary>
     /// <param name="skip"></param>
     /// <param name="take"></param>
@@ -70,7 +70,7 @@ public class SupplierController : ControllerBase
     }
 
     /// <summary>
-    /// Add a new Supplier
+    /// إضافة مورد جديد مع إنشاء مستخدم مرتبط به
     /// </summary>
     /// <param name="supplierDto"></param>
     /// <returns></returns>

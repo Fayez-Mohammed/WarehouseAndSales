@@ -28,11 +28,10 @@ namespace Base.API.Controllers
             this.userManager = userManager;
         }
         /// <summary>
-        /// Retrieves the official Customer Invoice for a specific order
+        /// جلب الفاتورة الرسمية للعميل لطلب معين
         /// </summary>
         /// <param name="orderId"></param>
         /// <returns></returns>
-       // [Authorize(Roles = "Customer")]
         [HttpGet("Retrieves the official Customer Invoice for a specific order")]
         public IActionResult RetriveCustomerInvoiceByOrderId([FromQuery] string orderId)
         {
@@ -53,7 +52,7 @@ namespace Base.API.Controllers
             return Ok(dto);
         }
         /// <summary>
-        /// Retrieves All Customer Invoices
+        /// جلب جميع فواتير العملاء الرسمية
         /// </summary>
         /// <returns></returns>
       //  [Authorize(Roles = "Customer")]
@@ -77,7 +76,7 @@ namespace Base.API.Controllers
             return Ok(invoiceDTOs);
         }
         /// <summary>
-        /// Retrieves the official SalesRep Invoice for a specific order
+        /// جلب الفاتورة الرسمية لمندوب المبيعات لطلب معين
         /// </summary>
         /// <param name="orderId"></param>
         /// <returns></returns>
@@ -102,7 +101,7 @@ namespace Base.API.Controllers
             return Ok(dto);
         }
         /// <summary>
-        /// Retrieves All SalesRep Invoices
+        /// جلب جميع فواتير مندوبي المبيعات الرسمية
         /// </summary>
         /// <returns></returns>
        // [Authorize(Roles = "SalesRep")]
@@ -150,7 +149,7 @@ namespace Base.API.Controllers
         }
 
         /// <summary>
-        /// Retrieves all invoices for a specific customer by their customer ID.
+        /// جلب جميع فواتير العملاء الرسمية لعميل معين بواسطة معرف العميل
         /// </summary>
         /// <param name="customerId"></param>
         /// <returns></returns>
@@ -182,7 +181,7 @@ namespace Base.API.Controllers
             return Ok(invoiceDTOs);
         }
         /// <summary>
-        /// Retrieves all invoices for a specific sales representative by their sales rep ID.
+        /// جلب جميع فواتير مندوبي المبيعات الرسمية لمندوب مبيعات معين بواسطة معرف مندوب المبيعات
         /// </summary>
         /// <param name="salesRepId"></param>
         /// <returns></returns>
@@ -212,7 +211,7 @@ namespace Base.API.Controllers
             return Ok(invoiceDTOs);
         }
         /// <summary>
-        /// Retrieves the most recent invoice for a specific customer by their customer ID.
+        /// جلب الفاتورة الرسمية الأخيرة للعميل لعميل معين بواسطة معرف العميل
         /// </summary>
         /// <param name="customerId"></param>
         /// <returns></returns>
@@ -245,7 +244,7 @@ namespace Base.API.Controllers
         }
 
         /// <summary>
-        /// Retrieves the most recent invoice for a specific sales representative by their sales rep ID.
+        /// جلب الفاتورة الرسمية الأخيرة لمندوب المبيعات لمندوب مبيعات معين بواسطة معرف مندوب المبيعات
         /// </summary>
         /// <param name="salesRepId"></param>
         /// <returns></returns>
@@ -277,7 +276,7 @@ namespace Base.API.Controllers
             return Ok(dto);
         }
         /// <summary>
-        /// Retrieves a paginated list of invoices based on the specified search criteria.
+        /// جلب جميع الفواتير مع خيارات البحث والفرز والترقيم الصفحي
         /// </summary>
         /// <param name="search"></param>
         /// <param name="invoiceType"></param>
@@ -333,10 +332,10 @@ namespace Base.API.Controllers
             return Ok(pagedResult);
         }
         /// <summary>
-        /// Updates the paid amount from the customer for a specific order's invoice.
+        /// استلام مبلغ من العميل لطلب معين وتحديث المبلغ المدفوع والمبلغ المتبقي في الفاتورة
         /// </summary>
         /// <param name="orderId"></param>
-        /// <param name="invoiceDTO"></param>
+        /// <param name="PayiedAmount"></param>
         /// <returns></returns>
         [HttpPut("PayedAmountFromCustomerByOrderId")]
         public async Task<IActionResult> TakeOrderPriceFromCustomer([FromQuery] string orderId, [FromQuery] decimal PayiedAmount)
@@ -361,6 +360,11 @@ namespace Base.API.Controllers
             
             return Ok(new { invoice.PaidAmount, invoice.RemainingAmount, CustomerName = customer.FullName });
         }
+        /// <summary>
+        /// جلب المبلغ المتبقي والمبلغ المدفوع لطلب معين بواسطة معرف الطلب
+        /// </summary>
+        /// <param name="orderId"></param>
+        /// <returns></returns>
         [HttpGet("RemainingAndPaidAmountForOrderByOrderId")]
         public async Task<IActionResult> GetRemainingAmountForOrder([FromQuery] string orderId)
         {

@@ -142,10 +142,10 @@ namespace Base.API.Controllers
             return Ok(new { Message = "Order created successfully", OrderId = order.Id });
         }
 
-        
-      
+
+
         /// <summary>
-        /// Approves an order, deducts stock, and generates invoices.
+        /// تاكيد الطلب وخصم المخزون   
         /// </summary>
         /// <param name="orderId"></param>
         /// <returns></returns>
@@ -266,7 +266,7 @@ namespace Base.API.Controllers
         }
         //////////////////////////
         /// <summary>
-        /// Creates and directly confirms an order on behalf of a customer.
+        /// انشاء طلب وتأكيده مباشرة من قبل مدير المتجر نيابة عن عميل معين
         /// </summary>
         /// <param name="dto"></param>
         /// <returns></returns>

@@ -23,7 +23,11 @@ namespace Base.API.Controllers
             _unitOfWork = unitOfWork;
             _userManager = userManager;
         }
-
+        /// <summary>
+        /// إنشاء مصروف جديد
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <returns></returns>
         [HttpPost]
     
         public async Task<IActionResult> CreateExpense([FromBody] CreateExpenseDto dto)
@@ -35,7 +39,8 @@ namespace Base.API.Controllers
             if (string.IsNullOrEmpty(currentUserId))
                 return Unauthorized();
 
-            string accountantUserId = dto.AccountantUserId ?? currentUserId;
+           // string accountantUserId = dto.AccountantUserId ?? currentUserId;
+            string accountantUserId =  currentUserId;
 
           
 
@@ -68,7 +73,10 @@ namespace Base.API.Controllers
             return Ok(new { Message = "تم إضافة المصروف بنجاح", Expense = response });
         }
 
-    
+        /// <summary>
+        /// جلب جميع المصروفات
+        /// </summary>
+        /// <returns></returns>
         [HttpGet("GetAll")]
 
         public async Task<IActionResult> GetAllExpenses()
@@ -91,7 +99,10 @@ namespace Base.API.Controllers
 
             return Ok(result);
         }
-
+        /// <summary>
+        /// جلب مصروفات المستخدم الحالي
+        /// </summary>
+        /// <returns></returns>
         [HttpGet("MyExpenses")]
        
         public async Task<IActionResult> GetMyExpenses()
@@ -117,7 +128,11 @@ namespace Base.API.Controllers
             return Ok(result);
         }
 
-      
+        /// <summary>
+        /// جلب مصروفات محاسب معين
+        /// </summary>
+        /// <param name="accountantUserId"></param>
+        /// <returns></returns>
         [HttpGet("ByAccountant")]
        // [Authorize(Roles = "Admin,Manager")]
         public async Task<IActionResult> GetExpensesByAccountant([FromQuery]string accountantUserId)

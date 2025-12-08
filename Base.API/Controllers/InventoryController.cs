@@ -19,7 +19,7 @@ public class InventoryController(IUnitOfWork unit
    , ILogger<Product> logger) : ControllerBase
 {
     /// <summary>
-    /// Get all products with pagination
+    /// جلب جميع المنتجات مع التصفية والفرز
     /// </summary>
     /// <param name="skip"></param>
     /// <param name="take"></param>
@@ -56,7 +56,7 @@ public class InventoryController(IUnitOfWork unit
         }
     }
     /// <summary>
-    /// Get product by id
+    ///  جلب مواصفات منتج معين بواسطة المعرف
     /// </summary>
     /// <param name="id"></param>
     /// <returns></returns>
@@ -97,7 +97,7 @@ public class InventoryController(IUnitOfWork unit
         }
     }
     /// <summary>
-    /// Create a new product
+    /// انشاء منتج جديد
     /// </summary>
     /// <param name="productCreateDto"></param>
     /// <returns></returns>
@@ -139,7 +139,7 @@ public class InventoryController(IUnitOfWork unit
         }
     }
     /// <summary>
-    /// Update existing product
+    /// تحديث منتج موجود
     /// </summary>
     /// <param name="productDto"></param>
     /// <returns></returns>
@@ -181,7 +181,7 @@ public class InventoryController(IUnitOfWork unit
         }
     }
     /// <summary>
-    /// Delete product by id
+    /// حذف منتج بواسطة المعرف
     /// </summary>
     /// <param name="id"></param>
     /// <returns></returns>
@@ -216,10 +216,11 @@ public class InventoryController(IUnitOfWork unit
         }
     }
     /// <summary>
-    /// Update inventory quantity for a product
+    /// تحديث كمية المخزون لمنتج معين (زيادة الكمية)
     /// </summary>
     /// <param name="productId"></param>
     /// <param name="quantity"></param>
+    /// <param name="supplierId"></param>
     /// <returns></returns>
     [HttpPost("products/stock/in")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
