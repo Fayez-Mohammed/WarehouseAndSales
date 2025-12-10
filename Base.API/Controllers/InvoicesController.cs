@@ -46,6 +46,8 @@ namespace Base.API.Controllers
                 Type = invoice.Type,
                 RecipientName = invoice.RecipientName,
                 Amount = invoice.Amount,
+                PaidAmount = invoice.PaidAmount,
+                RemainingAmount = invoice.RemainingAmount,
                 GeneratedDate = invoice.DateOfCreation,
                 OrderId = invoice.OrderId
             };
@@ -70,6 +72,8 @@ namespace Base.API.Controllers
                 Type = i.Type,
                 RecipientName = i.RecipientName,
                 Amount = i.Amount,
+                PaidAmount = i.PaidAmount,
+                RemainingAmount = i.RemainingAmount,
                 GeneratedDate = i.DateOfCreation,
                 OrderId = i.OrderId
             }).ToList();
@@ -95,7 +99,9 @@ namespace Base.API.Controllers
                 Type = invoice.Type,
                 RecipientName = invoice.RecipientName,
                 Amount = invoice.Amount,
-               GeneratedDate = invoice.DateOfCreation,
+                PaidAmount = invoice.PaidAmount,
+                RemainingAmount= invoice.RemainingAmount,
+                GeneratedDate = invoice.DateOfCreation,
                 OrderId = invoice.OrderId
             };
             return Ok(dto);
@@ -119,6 +125,8 @@ namespace Base.API.Controllers
                 Type = i.Type,
                 RecipientName = i.RecipientName,
                 Amount = i.Amount,
+                PaidAmount = i.PaidAmount,
+                RemainingAmount = i.RemainingAmount,
                 GeneratedDate = i.DateOfCreation,
                 OrderId = i.OrderId
             }).ToList();
@@ -142,6 +150,8 @@ namespace Base.API.Controllers
                 Type = i.Type,
                 RecipientName = i.RecipientName,
                 Amount = i.Amount,
+                PaidAmount = i.PaidAmount,
+                RemainingAmount = i.RemainingAmount,
                 GeneratedDate = i.DateOfCreation,
                 OrderId = i.OrderId
             }).ToList();
@@ -175,6 +185,8 @@ namespace Base.API.Controllers
                 Type = i.Type,
                 RecipientName = i.RecipientName,
                 Amount = i.Amount,
+                PaidAmount = i.PaidAmount,
+                RemainingAmount = i.RemainingAmount,
                 GeneratedDate = i.DateOfCreation,
                 OrderId = i.OrderId
             }).ToList();
@@ -205,6 +217,8 @@ namespace Base.API.Controllers
                 Type = i.Type,
                 RecipientName = i.RecipientName,
                 Amount = i.Amount,
+                PaidAmount = i.PaidAmount,
+                RemainingAmount = i.RemainingAmount,
                 GeneratedDate = i.DateOfCreation,
                 OrderId = i.OrderId
             }).ToList();
@@ -237,6 +251,8 @@ namespace Base.API.Controllers
                 Type = lastInvoice.Type,
                 RecipientName = lastInvoice.RecipientName,
                 Amount = lastInvoice.Amount,
+                PaidAmount = lastInvoice.PaidAmount,
+                RemainingAmount = lastInvoice.RemainingAmount,
                 GeneratedDate = lastInvoice.DateOfCreation,
                 OrderId = lastInvoice.OrderId
             };
@@ -270,6 +286,8 @@ namespace Base.API.Controllers
                 Type = lastInvoice.Type,
                 RecipientName = lastInvoice.RecipientName,
                 Amount = lastInvoice.Amount,
+                PaidAmount = lastInvoice.PaidAmount,
+                RemainingAmount = lastInvoice.RemainingAmount,
                 GeneratedDate = lastInvoice.DateOfCreation,
                 OrderId = lastInvoice.OrderId
             };
@@ -319,6 +337,8 @@ namespace Base.API.Controllers
                 Type = i.Type,
                 RecipientName = i.RecipientName,
                 Amount = i.Amount,
+                PaidAmount = i.PaidAmount,
+                RemainingAmount = i.RemainingAmount,
                 GeneratedDate = i.DateOfCreation,
                 OrderId = i.OrderId
             }).ToList();
@@ -361,11 +381,11 @@ namespace Base.API.Controllers
             return Ok(new { invoice.PaidAmount, invoice.RemainingAmount, CustomerName = customer.FullName });
         }
         /// <summary>
-        /// جلب المبلغ المتبقي والمبلغ المدفوع لطلب معين بواسطة معرف الطلب
+        /// جلب المبلغ المتبقي والمبلغ المدفوع لطلب عميل معين بواسطة معرف الطلب
         /// </summary>
         /// <param name="orderId"></param>
         /// <returns></returns>
-        [HttpGet("RemainingAndPaidAmountForOrderByOrderId")]
+        [HttpGet("RemainingAndPaidAmountForCustomerOrderByOrderId")]
         public async Task<IActionResult> GetRemainingAmountForOrder([FromQuery] string orderId)
         {
             var repo = unitOfWork.Repository<Invoice>();
@@ -383,6 +403,44 @@ namespace Base.API.Controllers
             
 
             return Ok(new {Total=total, PaidAmount = payedAmount, RemainingAmount = remainingAmount, CustomerName = customer.FullName });
+        }
+        [HttpPut("PayCommissionToSalesRepByOrderId")]
+        public async Task<IActionResult> PayCommissionToSalesRep([FromQuery] string orderId, [FromQuery] decimal PayiedAmount)
+        {
+            var repo = unitOfWork.Repository<Invoice>();
+            if (repo == null) return NotFound();
+            var spec = new BaseSpecification<Invoice>(i => i.OrderId == orderId && i.Type == InvoiceType.CommissionInvoice);
+            var invoice = repo.ListAsync(spec).Result.FirstOrDefault();
+            if (invoice == null) return NotFound();
+            invoice.PaidAmount += PayiedAmount;
+            invoice.RemainingAmount = invoice.RemainingAmount - PayiedAmount;
+
+            if (invoice.RemainingAmount < 0)
+            {
+                return BadRequest("Paid amount exceeds remaining amount.");
+            }
+            await repo.UpdateAsync(invoice);
+            await unitOfWork.CompleteAsync();
+            spec.Includes.Add(i => i.Order);
+            var salesRep = await userManager.FindByIdAsync(invoice.Order.SalesRepId);
+            if (salesRep == null) return NotFound();
+            return Ok(new { invoice.Amount,invoice.PaidAmount, invoice.RemainingAmount, SalesRepName = salesRep.FullName });
+        }
+        [HttpGet("RemainingAndPaidAmountForSalesRepOrderByOrderId")]
+        public async Task<IActionResult> GetRemainingAmountForSalesRepOrder([FromQuery] string orderId)
+        {
+            var repo = unitOfWork.Repository<Invoice>();
+            if (repo == null) return NotFound();
+            var spec = new BaseSpecification<Invoice>(i => i.OrderId == orderId && i.Type == InvoiceType.CommissionInvoice);
+            var invoice = repo.ListAsync(spec).Result.FirstOrDefault();
+            if (invoice == null) return NotFound();
+            var total = invoice.Amount;
+            var remainingAmount = invoice.RemainingAmount;
+            var payedAmount = invoice.PaidAmount;
+            spec.Includes.Add(i => i.Order);
+            var salesRep = await userManager.FindByIdAsync(invoice.Order.SalesRepId);
+            if (salesRep == null) return NotFound();
+            return Ok(new { Total=total, PaidAmount = payedAmount, RemainingAmount = remainingAmount, SalesRepName = salesRep.FullName });
         }
     }
 

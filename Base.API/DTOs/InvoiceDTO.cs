@@ -8,8 +8,8 @@ namespace Base.API.DTOs
         public InvoiceType Type { get; set; }
         public string RecipientName { get; set; }
         public decimal Amount { get; set; }
-      //  public decimal PaidAmount { get; set; } = 0m;  // الفلوس اللي العميل دفعها
-      //  public decimal RemainingAmount { get; set; } = 0m;  // المديونية أو الباقي
+        public decimal PaidAmount { get; set; } = 0m;  // الفلوس اللي العميل دفعها
+        public decimal RemainingAmount { get; set; } = 0m;  // المديونية أو الباقي
         public DateTime GeneratedDate { get; set; }
         public string OrderId { get; set; }
     }

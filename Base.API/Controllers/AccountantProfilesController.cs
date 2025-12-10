@@ -13,7 +13,7 @@ using System.Security.Claims;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize(Roles = "SystemAdmin")]
+[Authorize(Roles = "SystemAdmin,Accountant")]
 public class AccountantProfilesController : ControllerBase
 {
     private readonly IUnitOfWork _unitOfWork;
@@ -117,11 +117,12 @@ public class AccountantProfilesController : ControllerBase
            var  accountantDTOs= accountants.Select(a => new AccountantGetDto
             {
                 Id = a.Id,
-                Name = a.User.FullName,
+                UserId = a.UserId,
+               Name = a.User.FullName,
                 Email = a.User.Email,
                 PhoneNumber = a.User.PhoneNumber
             }).ToList();
-        return Ok(accountants);
+        return Ok(accountantDTOs);
         }
 
     /// <summary>
