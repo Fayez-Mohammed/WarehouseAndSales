@@ -43,7 +43,7 @@ public class InventoryController(IUnitOfWork unit
                .ListAsync(spec);
             var list =
                inventory
-                  .Select(x => new { ProductId=x.Id,List = x.Name, SalesPersonId = x.SellPrice });
+                  .Select(x => new { ProductId=x.Id,ProductName = x.Name, SellPrice = x.SellPrice });
 
            
             return Ok(list);

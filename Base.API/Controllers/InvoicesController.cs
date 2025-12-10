@@ -404,6 +404,12 @@ namespace Base.API.Controllers
 
             return Ok(new {Total=total, PaidAmount = payedAmount, RemainingAmount = remainingAmount, CustomerName = customer.FullName });
         }
+        /// <summary>
+        /// دفع عمولة لمندوب المبيعات لطلب معين وتحديث المبلغ المدفوع والمبلغ المتبقي في الفاتورة
+        /// </summary>
+        /// <param name="orderId"></param>
+        /// <param name="PayiedAmount"></param>
+        /// <returns></returns>
         [HttpPut("PayCommissionToSalesRepByOrderId")]
         public async Task<IActionResult> PayCommissionToSalesRep([FromQuery] string orderId, [FromQuery] decimal PayiedAmount)
         {
@@ -426,6 +432,11 @@ namespace Base.API.Controllers
             if (salesRep == null) return NotFound();
             return Ok(new { invoice.Amount,invoice.PaidAmount, invoice.RemainingAmount, SalesRepName = salesRep.FullName });
         }
+        /// <summary>
+        /// جلب المبلغ المتبقي والمبلغ المدفوع لطلب مندوب مبيعات معين بواسطة معرف الطلب
+        /// </summary>
+        /// <param name="orderId"></param>
+        /// <returns></returns>
         [HttpGet("RemainingAndPaidAmountForSalesRepOrderByOrderId")]
         public async Task<IActionResult> GetRemainingAmountForSalesRepOrder([FromQuery] string orderId)
         {
