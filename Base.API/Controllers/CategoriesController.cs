@@ -12,7 +12,7 @@ namespace Base.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize] // Adjust roles as needed, e.g., [Authorize(Roles = "StoreManager")]
+    [Authorize(Roles = "SystemAdmin, StoreManager, Accountant")] // Adjust roles as needed, e.g., [Authorize(Roles = "StoreManager")]
     public class CategoriesController : ControllerBase
     {
         private readonly IUnitOfWork _unitOfWork;
@@ -75,7 +75,7 @@ namespace Base.API.Controllers
         /// <param name="dto"></param>
         /// <returns></returns>
         [HttpPost("CreateCategory")]
-        [Authorize(Roles = "StoreManager")] // Example: Only managers can create
+      
         public async Task<IActionResult> CreateCategory([FromBody] CreateCategoryDto dto)
         {
             if (!ModelState.IsValid)
@@ -102,7 +102,7 @@ namespace Base.API.Controllers
         /// <param name="dto"></param>
         /// <returns></returns>
         [HttpPut("UpdateCategory")]
-        [Authorize(Roles = "StoreManager")]
+      
         public async Task<IActionResult> UpdateCategory([FromBody] UpdateCategoryDto dto)
         {
             if (!ModelState.IsValid)
@@ -132,7 +132,7 @@ namespace Base.API.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpDelete("DeleteCategory")]
-        [Authorize(Roles = "StoreManager")]
+  
         public async Task<IActionResult> DeleteCategory([FromQuery] string id)
         {
             var repo = _unitOfWork.Repository<Category>();

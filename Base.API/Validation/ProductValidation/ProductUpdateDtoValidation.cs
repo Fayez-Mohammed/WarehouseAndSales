@@ -9,7 +9,7 @@ public class ProductUpdateDtoValidation : AbstractValidator<ProductUpdateDto>
     {
         RuleFor(x => x.SellPrice)
             .GreaterThan(0);
-        
+
         RuleFor(x => x.Quantity)
             .GreaterThan(0);
         RuleFor(x => x.BuyPrice)

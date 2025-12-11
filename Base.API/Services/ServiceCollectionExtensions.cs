@@ -1,4 +1,5 @@
 ﻿using Base.API.Authorization;
+using Base.API.DTOs;
 using Base.API.Filters;
 using Base.DAL.Contexts;
 using Base.DAL.Models.BaseModels;
@@ -9,6 +10,7 @@ using Base.Services.Implementations;
 using Base.Services.Interfaces;
 using BaseAPI.Validation.ProductValidation;
 using BaseAPI.Validation.SupplierValidation;
+using FluentValidation;
 using Hangfire;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -239,6 +241,10 @@ namespace Base.API.Services
             services.AddScoped<IUploadImageService, UploadImageService>();
             services.AddScoped<ProductDtoValidation>();
             services.AddScoped<ProductUpdateDtoValidation>();
+            // Instead of: services.AddScoped<ProductDtoValidation>();
+            //// Use this:
+            //services.AddScoped<IValidator<ProductDto>, ProductDtoValidation>();
+            //services.AddScoped<IValidator<ProductUpdateDto>, ProductUpdateDtoValidation>();
             services.AddScoped<SupplierPostValidation>();
             services.AddScoped<AccountantPostDtoValidator>();
             // -----------------------

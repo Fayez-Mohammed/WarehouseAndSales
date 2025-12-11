@@ -44,7 +44,7 @@ public class InventoryController(IUnitOfWork unit
                .ListAsync(spec);
             var list =
                inventory
-                  .Select(x => new { ProductId=x.Id,ProductName = x.Name, SellPrice = x.SellPrice });
+                  .Select(x => new { ProductId=x.Id,ProductName = x.Name, SellPrice = x.SellPrice, CategoryId = x.CategoryId });
 
            
             return Ok(list);
@@ -87,7 +87,8 @@ public class InventoryController(IUnitOfWork unit
                 BuyPrice = product.BuyPrice,
                 Quantity = product.CurrentStockQuantity,
                 SKU = product.SKU,
-                Description = product.Description
+                Description = product.Description,
+                CategoryId = product.CategoryId
             };
             return Ok(response);
             //  return Ok(new ApiResponseDTO { Data = response, StatusCode = StatusCodes.Status200OK, Message = "OK" });
@@ -116,15 +117,15 @@ public class InventoryController(IUnitOfWork unit
         {
             var product = new Product()
             {
+                
                 Name = productCreateDto.ProductName,
                 SKU = productCreateDto.SKU,
                 SellPrice = productCreateDto.SalePrice,
                 BuyPrice = productCreateDto.BuyPrice,
                 Description = productCreateDto.Description,
                 CurrentStockQuantity = productCreateDto.Quantity,
-                SupplierId= SupplierId
-
-
+                
+                CategoryId = productCreateDto.CategoryId
             };
 
             await unit.Repository<Product>().AddAsync(product);
@@ -167,7 +168,7 @@ public class InventoryController(IUnitOfWork unit
             product.SellPrice = productDto.SellPrice;
             product.BuyPrice = productDto.BuyPrice;
             product.Description = productDto.Description;
-            product.SellPrice = productDto.SellPrice;
+            product.CategoryId = productDto.CategoryId;
 
             var result = await unit.CompleteAsync();
 

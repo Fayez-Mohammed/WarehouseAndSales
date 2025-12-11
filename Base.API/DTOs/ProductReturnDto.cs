@@ -20,4 +20,7 @@ public class ProductReturnDto
     public string? SKU  { get; set; }
     [MaxLength(200)]
     public string? Description { get; set; }
+    [MaxLength(200)]
+
+    public string? CategoryId { get; set; }
 }

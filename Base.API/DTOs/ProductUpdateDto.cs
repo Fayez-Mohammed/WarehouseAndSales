@@ -14,9 +14,11 @@ public class ProductUpdateDto
     [Range(0, double.MaxValue)]
     public int Quantity { get; set; }
     [MaxLength(200)]
-    public string? SKU  { get; set; }
+    public string? SKU { get; set; }
     [MaxLength(200)]
     public string? Description { get; set; }
     [Range(0.1, double.MaxValue)]
     public decimal BuyPrice { get; set; }
+    [MaxLength(200)]
+    public string? CategoryId { get; set; }
 }
