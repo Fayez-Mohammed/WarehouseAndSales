@@ -21,6 +21,8 @@ namespace Base.DAL.Models.SystemModels
         public string? SupplierId { get; set; }
         // public virtual Inventory Inventory { get; set; }
         public virtual Supplier Supplier { get; set; }
+        public string? CategoryId { get; set; }
+        public virtual Category Category { get; set; }
         public virtual ICollection<StockTransaction> StockTransactions { get; set; }
     }
 }

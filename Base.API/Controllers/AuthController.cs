@@ -42,6 +42,12 @@ namespace Base.API.Controllers
             _logger = logger;
             _userManager = userManager;
         }
+        /// <summary>
+        /// Forcefully resets a user's password (for development/testing purposes only).
+        /// </summary>
+        /// <param name="email"></param>
+        /// <param name="newPassword"></param>
+        /// <returns></returns>
         [HttpPost("ForceResetPassword")]
         public async Task<IActionResult> ForceResetPassword([FromQuery] string email, [FromQuery] string newPassword)
         {

@@ -34,9 +34,10 @@ public class InventoryController(IUnitOfWork unit
 
         try
         {
-            var spec = new BaseSpecification<Product>();
+            var spec = new BaseSpecification<Product>(p=>p.IsDeleted == false);
            // spec.Includes.Add(i => i.Products);
             spec.ApplyPaging(skip, take);
+
 
             var inventory = await unit
                .Repository<Product>()

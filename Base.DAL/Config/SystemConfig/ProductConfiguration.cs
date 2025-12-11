@@ -24,6 +24,23 @@ namespace Base.DAL.Config.SystemConfig
             // Fix Audit (Standard practice now for all BaseEntities)
             builder.HasOne(x => x.CreatedBy).WithMany().HasForeignKey(x => x.CreatedById).OnDelete(DeleteBehavior.Restrict);
             builder.HasOne(x => x.UpdatedBy).WithMany().HasForeignKey(x => x.UpdatedById).OnDelete(DeleteBehavior.Restrict);
+
+            // ... inside the Configure method of ProductConfiguration ...
+
+            // NEW: Map Category
+            builder.HasOne(p => p.Category)
+                   .WithMany(c => c.Products)
+                   .HasForeignKey(p => p.CategoryId)
+                   .OnDelete(DeleteBehavior.SetNull); // Use SetNull so if Category is deleted, Product remains (or use Restrict)
+
+
         }
     }
 }
+
+
+
+
+
+
+

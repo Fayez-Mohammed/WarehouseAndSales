@@ -317,6 +317,56 @@ namespace Base.API.Controllers
                 return StatusCode(500, "Failed to create order.");
             return Ok(new { Message = "Order created and confirmed successfully", OrderId = order.Id });
         }
-
+        /// <summary>
+        /// جلب جميع الطلبات المؤكدة من قبل مندوبي المبيعات لمدير المتجر
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("GetAllConfirmedOrders")]
+        [Authorize(Roles = "StoreManager")]
+        public async Task<IActionResult> GetAllConfirmedOrders()
+        {
+            var repo = unitOfWork.Repository<Order>();
+            var spec = new BaseSpecification<Order>(o => o.Status == OrderStatus.Confirmed);
+            var confirmedOrders = await repo.ListAsync(spec);
+            var confirmedOrdersDto = confirmedOrders.Select(o => new
+            {
+                o.Id,
+                o.TotalAmount,
+                o.CommissionAmount,
+                o.Status,
+                o.CustomerId,
+                o.SalesRepId,
+                o.DateOfCreation
+            });
+            return Ok(confirmedOrdersDto);
         }
+
+        /// <summary>
+        /// جلب جميع الطلبات المعتمدة من قبل مدير المتجر
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("GetAllApprovedOrders")]
+        [Authorize(Roles = "StoreManager")]
+        public async Task<IActionResult> GetAllApprovedOrders()
+        {
+            var repo = unitOfWork.Repository<Order>();
+            var spec = new BaseSpecification<Order>(o => o.Status == OrderStatus.Approved);
+            var approvedOrders = await repo.ListAsync(spec);
+            var approvedOrdersDto = approvedOrders.Select(o => new
+            {
+                o.Id,
+                o.TotalAmount,
+                o.CommissionAmount,
+                o.Status,
+                o.CustomerId,
+                o.SalesRepId,
+                o.DateOfCreation
+            });
+            return Ok(approvedOrdersDto);
+        }
+    }
 }
+
+
+
+
