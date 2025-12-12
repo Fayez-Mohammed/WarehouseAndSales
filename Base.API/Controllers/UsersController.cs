@@ -1,13 +1,15 @@
-﻿using Base.Services.Interfaces;
+﻿using Base.DAL.Models.BaseModels;
+using Base.Services.Interfaces;
 using Base.Shared.DTOs;
 using Base.Shared.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Base.API.Controllers
 {
-   // [ApiExplorerSettings(IgnoreApi = true)]
+    // [ApiExplorerSettings(IgnoreApi = true)]
     [Authorize(Roles = "StoreManager,SystemAdmin,Accountant")]
     [Authorize(Policy = "ActiveUserOnly")]
     [Route("api/users")]
@@ -15,10 +17,12 @@ namespace Base.API.Controllers
     public class UsersController : ControllerBase
     {
         private readonly IUserProfileService _userProfileService;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public UsersController(IUserProfileService userProfileService)
+        public UsersController(IUserProfileService userProfileService, UserManager<ApplicationUser> userManager)
         {
             _userProfileService = userProfileService;
+            _userManager = userManager;
         }
         /// <summary>
         /// جلب جميع المستخدمين مع خيارات التصفية والصفحة
@@ -65,9 +69,9 @@ namespace Base.API.Controllers
         /// <exception cref="ArgumentNullException"></exception>
         // POST: api/users
         [HttpPost("create")]
-        public async Task<ActionResult<UserDto>> Create([FromQuery] UserTypes? userType,[FromBody] CreateUserRequest request)
+        public async Task<ActionResult<UserDto>> Create([FromQuery] UserTypes? userType, [FromBody] CreateUserRequest request)
         {
-            
+
             if (request == null) throw new ArgumentNullException(nameof(request));
             var user = await _userProfileService.CreateAsync(request);
             return Ok(user);
@@ -138,6 +142,31 @@ namespace Base.API.Controllers
             var success = await _userProfileService.ChangePasswordAsync(id, newPassword);
             if (!success) return Forbid();
             return Ok();
+        }
+        /// <summary>
+        /// جلب بيانات المستخدم الحالي
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("current-user")]
+        public async Task<ActionResult<UserDto>> GetCurrentUser()
+        {
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrWhiteSpace(userId)) return Unauthorized();
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null) return NotFound();
+            var userDto = new UserDto
+            {
+                Id = user.Id,
+                FullName = user.FullName,
+                UserName = user.UserName,
+                Email = user.Email,
+                PhoneNumber = user.PhoneNumber,
+                UserType = user.Type,
+                IsActive = user.IsActive,
+               
+            };
+          
+            return Ok(userDto);
         }
     }
 }
