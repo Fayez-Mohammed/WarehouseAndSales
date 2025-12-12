@@ -49,7 +49,8 @@ namespace Base.API.Controllers
                 Amount = dto.Amount,
                 Description = dto.Description,
                 AccountantUserId = accountantUserId,
-                //CreatedAt = DateTime.UtcNow
+                DateOfCreation = DateTime.UtcNow
+
             };
 
             await _unitOfWork.Repository<Expense>().AddAsync(expense);
@@ -65,7 +66,7 @@ namespace Base.API.Controllers
                 Id = expense.Id,
                 Amount = expense.Amount,
                 Description = expense.Description,
-              //  CreatedAt = expense.CreatedAt,
+                CreatedAt = expense.DateOfCreation,
                 AccountantUserId = accountantUserId,
                 AccountantName = accountant?.UserName ?? "غير معروف"
             };
@@ -148,7 +149,7 @@ namespace Base.API.Controllers
                 Id = e.Id,
                 Amount = e.Amount,
                 Description = e.Description,
-              //  CreatedAt = e.CreatedAt,
+                CreatedAt = e.DateOfCreation,
                 AccountantUserId = e.AccountantUserId,
                 AccountantName = e.AccountantUser?.UserName
             });

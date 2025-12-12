@@ -12,7 +12,7 @@ public class CreateExpenseDto
     public string Description { get; set; } = string.Empty;
 
     // Optional: Admin or Manager can specify who made the expense
-    public string? AccountantUserId { get; set; }
+   // public string? AccountantUserId { get; set; }
 }
 
 
