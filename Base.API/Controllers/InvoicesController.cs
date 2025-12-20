@@ -318,6 +318,7 @@ namespace Base.API.Controllers
 
            [FromQuery] int page = 1,
            [FromQuery] int pageSize = 20){
+
             var repo = unitOfWork.Repository<Invoice>();
             if (repo == null) return NotFound();
             var spec = new BaseSpecification<Invoice>(i =>
@@ -432,6 +433,8 @@ namespace Base.API.Controllers
             if (salesRep == null) return NotFound();
             return Ok(new { invoice.Amount,invoice.PaidAmount, invoice.RemainingAmount, SalesRepName = salesRep.FullName });
         }
+
+
         /// <summary>
         /// جلب المبلغ المتبقي والمبلغ المدفوع لطلب مندوب مبيعات معين بواسطة معرف الطلب
         /// </summary>
@@ -452,6 +455,99 @@ namespace Base.API.Controllers
             var salesRep = await userManager.FindByIdAsync(invoice.Order.SalesRepId);
             if (salesRep == null) return NotFound();
             return Ok(new { Total=total, PaidAmount = payedAmount, RemainingAmount = remainingAmount, SalesRepName = salesRep.FullName });
+        }
+        /// <summary>
+        /// الدفع ل المورد
+        /// </summary>
+        /// <param name="SupplierInvoiceId"></param>
+        /// <param name="PayiedAmount"></param>
+        /// <returns></returns>
+        [HttpPut("PayPartOfMoneyToSupplierBySupplierInvoiceId")]
+        public async Task<IActionResult> PayToSupplier([FromQuery] string SupplierInvoiceId, [FromQuery] decimal PayiedAmount)
+        {
+            var repo = unitOfWork.Repository<SupplierInvoice>();
+            if (repo == null) return NotFound();
+            var spec = new BaseSpecification<SupplierInvoice>(i => i.Id == SupplierInvoiceId && i.Type == InvoiceType.SupplierInvoice);
+            var invoice = repo.ListAsync(spec).Result.FirstOrDefault();
+            if (invoice == null) return NotFound();
+            invoice.PaidAmount += PayiedAmount;
+            invoice.RemainingAmount = invoice.RemainingAmount - PayiedAmount;
+
+            if (invoice.RemainingAmount < 0)
+            {
+                return BadRequest("Paid amount exceeds remaining amount.");
+            }
+            await repo.UpdateAsync(invoice);
+            await unitOfWork.CompleteAsync();
+            spec.Includes.Add(i => i.Supplier);
+            var Supplier = await userManager.FindByIdAsync(invoice.Supplier.UserId);
+            if (Supplier == null) return NotFound();
+            return Ok(new { invoice.Amount, invoice.PaidAmount, invoice.RemainingAmount, Supplier = Supplier.FullName });
+        }
+       /// <summary>
+       /// كل فواتير المورد
+       /// </summary>
+       /// <param name="supplierId"></param>
+       /// <returns></returns>
+        
+        [HttpGet("AllInvoicesForSpecificSupplierBySupplierId")]
+        public async Task<IActionResult> AllInvoicesForSpecificSupplierBySupplierId([FromQuery] string supplierId)
+        {
+            var reposup = unitOfWork.Repository<Supplier>();
+            var specsup=new BaseSpecification<Supplier>(s=>s.UserId==supplierId);
+            var supplier = await reposup.GetEntityWithSpecAsync(specsup);
+            var repo = unitOfWork.Repository<SupplierInvoice>();
+            if (repo == null) return NotFound();
+            var spec = new BaseSpecification<SupplierInvoice>(i =>i.SupplierId==supplier.Id && i.Type==InvoiceType.SupplierInvoice);
+          
+         
+            var invoices = repo.ListAsync(spec).Result;
+            if (invoices == null || !invoices.Any()) return NotFound();
+            var invoiceDTOs = invoices.Select(i => new SupplierInvoiceDTO
+            {
+                Id = i.Id,
+                Type = i.Type,
+                SupplierName = i.SupplierName,
+                Amount = i.Amount,
+                PaidAmount = i.PaidAmount,
+                RemainingAmount = i.RemainingAmount,
+                GeneratedDate = i.DateOfCreation,
+                SupplierId=supplierId
+                 
+            }).ToList();
+            return Ok(invoiceDTOs);
+        }
+        
+        /// <summary>
+        /// اخر فاتورة مورد
+        /// </summary>
+        /// <param name="supplierId"></param>
+        /// <returns></returns>
+        [HttpGet("LastInvoiceForSpecificSupplierBySupplierId")]
+        public async Task<IActionResult> LastInvoiceForSpecificSupplierBySupplierIdAsync([FromQuery] string supplierId)
+        {
+            var reposup = unitOfWork.Repository<Supplier>();
+            var specsup = new BaseSpecification<Supplier>(s => s.UserId == supplierId);
+            var supplier = await reposup.GetEntityWithSpecAsync(specsup);
+            var repo = unitOfWork.Repository<SupplierInvoice>();
+            if (repo == null) return NotFound();
+            var spec = new BaseSpecification<SupplierInvoice>(i => i.SupplierId==supplier.Id &&i.Type == InvoiceType.SupplierInvoice);
+            var invoices = repo.ListAsync(spec).Result;
+            if (invoices == null || !invoices.Any()) return NotFound();
+            var lastInvoice = invoices.OrderByDescending(i => i.DateOfCreation).FirstOrDefault();
+            if (lastInvoice == null) return NotFound();
+            var dto = new SupplierInvoiceDTO
+            {
+                Id = lastInvoice.Id,
+                Type = lastInvoice.Type,
+                SupplierName = lastInvoice.SupplierName,
+                Amount = lastInvoice.Amount,
+                PaidAmount = lastInvoice.PaidAmount,
+                RemainingAmount = lastInvoice.RemainingAmount,
+                GeneratedDate = lastInvoice.DateOfCreation,
+              
+            };
+            return Ok(dto);
         }
     }
 

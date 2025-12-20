@@ -3,6 +3,7 @@
     public enum InvoiceType
     {
         CustomerInvoice = 1,
-        CommissionInvoice = 2
+        CommissionInvoice = 2,
+        SupplierInvoice = 3
     }
 }

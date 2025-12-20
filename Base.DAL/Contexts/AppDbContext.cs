@@ -108,6 +108,7 @@ namespace Base.DAL.Contexts
         public DbSet<Inventory> Inventories { get; set; }
         public DbSet<Expense> Expenses { get; set; }
         public DbSet<Category> Categories { get; set; }
+        public DbSet<SupplierInvoice> SupplierInvoices { get; set; }
         #endregion
     }
 }

@@ -1,9 +1,14 @@
 ﻿using Base.API.DTOs;
+using Base.DAL.Models.BaseModels;
 using Base.DAL.Models.SystemModels;
+using Base.DAL.Models.SystemModels.Enums;
+using Base.Repo.Implementations;
 using Base.Repo.Interfaces;
 using Base.Repo.Specifications;
+using Base.Services.Interfaces;
 using BaseAPI.Validation.ProductValidation;
 using FluentValidation;
+using Hangfire.Server;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RepositoryProject.Specifications;
@@ -16,7 +21,7 @@ namespace Base.API.Controllers;
 public class InventoryController(IUnitOfWork unit
    , ProductDtoValidation productValidator
    , ProductUpdateDtoValidation productUpdateValidator
-   , ILogger<Product> logger) : ControllerBase
+   , ILogger<Product> logger,IUserService userService) : ControllerBase
 {
     /// <summary>
     /// جلب جميع المنتجات مع التصفية والفرز
@@ -141,6 +146,82 @@ public class InventoryController(IUnitOfWork unit
         }
     }
     /// <summary>
+    /// ادخال مجموعه من المنتجات اللي جابها المورد
+    /// </summary>
+    /// <param name="SupplierId"></param>
+    /// <param name="productCreateDto"></param>
+    /// <returns></returns>
+    
+    [HttpPost("ListOfproducts")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> CreateListOfProducts([FromQuery] string SupplierId, [FromBody] List<ProductDto> productCreateDto)
+    {
+        //  ApplicationUser user =await userService.GetByIdAsync(SupplierId);
+        var repo = unit.Repository<Supplier>();
+        var spec = new BaseSpecification<Supplier>(s => s.UserId == SupplierId);
+        var supplier = await repo.GetEntityWithSpecAsync(spec);
+        decimal totalPrice = 0;
+        foreach (var productDto in productCreateDto)
+        {
+            var validate = await productValidator.ValidateAsync(productDto);
+            if (!validate.IsValid)
+                return BadRequest(new ApiResponseDTO { Message = "Invalid Input parameters" });
+            var product = new Product()
+            {
+                Name = productDto.ProductName,
+                SKU = productDto.SKU,
+                SellPrice = productDto.SalePrice,
+                BuyPrice = productDto.BuyPrice,
+                Description = productDto.Description,
+                CurrentStockQuantity = productDto.Quantity,
+                CategoryId = productDto.CategoryId
+            };
+            totalPrice += (productDto.BuyPrice*productDto.Quantity);
+            await unit.Repository<Product>().AddAsync(product);
+
+            // Create Stock Transaction Log
+            var stockLog = new StockTransaction
+            {
+                ProductId = product.Id,
+                SupplierId = supplier.Id,
+                Type = TransactionType.StockIn,
+                Quantity = product.CurrentStockQuantity,
+                DateOfCreation = DateTime.UtcNow
+                // REMOVED: TransactionDate = DateTime.UtcNow 
+                // Your AppDbContext automatically fills 'DateOfCreation' which serves as the date.
+            };
+            await unit.Repository<StockTransaction>().AddAsync(stockLog);
+
+        }
+        try
+        {
+          
+            
+            // 3. Generate Supplier Invoice
+            var supplierInvoice = new SupplierInvoice
+            {
+                SupplierId = supplier.Id,
+                Type = InvoiceType.SupplierInvoice,
+                SupplierName = supplier.Name,
+                Amount = totalPrice,
+                RemainingAmount = totalPrice,
+                DateOfCreation = DateTime.UtcNow
+            };
+            await unit.Repository<SupplierInvoice>().AddAsync(supplierInvoice);
+            var result = await unit.CompleteAsync();
+            if (result == 0)
+                return BadRequest(new ApiResponseDTO { Message = "Error occured while adding products" });
+            return Ok(result);
+            // return Ok(new ApiResponseDTO { Data = result, StatusCode = StatusCodes.Status201Created });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new ApiResponseDTO { Message = "Error while creating products" });
+        }
+    }
+    /// <summary>
     /// تحديث منتج موجود
     /// </summary>
     /// <param name="productDto"></param>
@@ -250,6 +331,7 @@ public class InventoryController(IUnitOfWork unit
             var StockTransaction = new StockTransaction()
             {
                 ProductId = productId,
+                SupplierId=supplierId,
                 Quantity = quantity,
                 Type = DAL.Models.SystemModels.Enums.TransactionType.StockIn,
                 DateOfCreation = DateTime.UtcNow
