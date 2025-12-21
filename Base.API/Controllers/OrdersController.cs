@@ -189,7 +189,12 @@ namespace Base.API.Controllers
                     OrderId = order.Id,
                     StoreManagerId = managerId,
                     Type = TransactionType.StockOut,
-                    Quantity = -item.Quantity
+                    Quantity = -item.Quantity,
+                    UnitBuyPrice= product.BuyPrice,
+                    UnitSellPrice= product.SellPrice,
+                  
+
+
                     // REMOVED: TransactionDate = DateTime.UtcNow 
                     // Your AppDbContext automatically fills 'DateOfCreation' which serves as the date.
                 };

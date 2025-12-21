@@ -1,5 +1,6 @@
 ﻿using Base.DAL.Models.BaseModels;
-using Base.DAL.Models.SystemModels.Enums; // Assuming ApplicationUser & BaseEntity are here
+using Base.DAL.Models.SystemModels.Enums;
+using System.ComponentModel.DataAnnotations.Schema; // Assuming ApplicationUser & BaseEntity are here
 
 namespace Base.DAL.Models.SystemModels
 {
@@ -7,7 +8,12 @@ namespace Base.DAL.Models.SystemModels
     {
         public TransactionType Type { get; set; }
         public int Quantity { get; set; } // + for In, - for Out
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal? UnitBuyPrice { get; set; }
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal? UnitSellPrice { get; set; }
 
+        public string? Notes { get; set; } // Store "Profit: Found 5 items" here
         public string ProductId { get; set; }
         public virtual Product Product { get; set; }
 

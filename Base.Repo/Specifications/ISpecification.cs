@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore.Query;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -14,7 +15,7 @@ namespace Base.Repo.Specifications
 
         // قائمة بالعلاقات المراد تحميلها (مثل p => p.ProductType)
         List<Expression<Func<T, object>>> Includes { get; }
-
+        List<Func<IQueryable<T>, IIncludableQueryable<T, object>>> AllIncludes { get; }
         // شروط الترتيب
         Expression<Func<T, object>> OrderBy { get; }
         Expression<Func<T, object>> OrderByDescending { get; }

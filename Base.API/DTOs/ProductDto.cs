@@ -23,3 +23,9 @@ public class ProductDto
     public string? CategoryId { get; set; }
 
 }
+
+public class ProductForUpdateDto
+{
+public string? ProductId { get; set; }
+    public int Quantity { get; set; }
+}

@@ -177,6 +177,7 @@ public class InventoryController(IUnitOfWork unit
                 Description = productDto.Description,
                 CurrentStockQuantity = productDto.Quantity,
                 CategoryId = productDto.CategoryId
+                
             };
             totalPrice += (productDto.BuyPrice*productDto.Quantity);
             await unit.Repository<Product>().AddAsync(product);
@@ -188,7 +189,11 @@ public class InventoryController(IUnitOfWork unit
                 SupplierId = supplier.Id,
                 Type = TransactionType.StockIn,
                 Quantity = product.CurrentStockQuantity,
-                DateOfCreation = DateTime.UtcNow
+                DateOfCreation = DateTime.UtcNow,
+                UnitBuyPrice=product.BuyPrice,
+                UnitSellPrice=product.SellPrice,
+                Notes= "Updated via bulk product addition"
+
                 // REMOVED: TransactionDate = DateTime.UtcNow 
                 // Your AppDbContext automatically fills 'DateOfCreation' which serves as the date.
             };
@@ -312,6 +317,10 @@ public class InventoryController(IUnitOfWork unit
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateInventoryQuantity([FromQuery] string productId, [FromQuery] int quantity, [FromQuery] string supplierId)
     {
+        var repo = unit.Repository<Supplier>();
+        var spec = new BaseSpecification<Supplier>(s => s.UserId == supplierId);
+        var supplier = await repo.GetEntityWithSpecAsync(spec);
+        decimal totalPrice = 0;
         if (string.IsNullOrEmpty(productId))
             return BadRequest(new ApiResponseDTO { Message = "Invalid ID" });
 
@@ -334,17 +343,107 @@ public class InventoryController(IUnitOfWork unit
                 SupplierId=supplierId,
                 Quantity = quantity,
                 Type = DAL.Models.SystemModels.Enums.TransactionType.StockIn,
-                DateOfCreation = DateTime.UtcNow
+                DateOfCreation = DateTime.UtcNow,
+                UnitBuyPrice=product.BuyPrice,
+                UnitSellPrice=product.SellPrice,
+                Notes= "Updated via single product stock in"
             };
-
+            totalPrice += (product.BuyPrice * quantity);
             await unit.Repository<StockTransaction>().AddAsync(StockTransaction);
 
+
+            // 3. Generate Supplier Invoice
+            var supplierInvoice = new SupplierInvoice
+            {
+                SupplierId = supplier.Id,
+                Type = InvoiceType.SupplierInvoice,
+                SupplierName = supplier.Name,
+                Amount = totalPrice,
+                RemainingAmount = totalPrice,
+                DateOfCreation = DateTime.UtcNow
+            };
+            await unit.Repository<SupplierInvoice>().AddAsync(supplierInvoice);
             var result = await unit.CompleteAsync();
 
             if (result == 0)
               
                 return BadRequest(new ApiResponseDTO { Message = "Error occured while updating product" });
            
+            return Ok(result);
+            // return NoContent();
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new ApiResponseDTO { Message = "Error while updating inventory quantity" });
+        }
+
+    }
+    /// <summary>
+    /// تحديث كمية المخزون لمجموعة من المنتجات (زيادة الكمية)
+    /// </summary>
+    /// <param name="products"></param>
+    /// <param name="supplierId"></param>
+    /// <returns></returns>
+    [HttpPost("Listproducts/stock/in")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateListInventoryQuantity([FromBody] List<ProductForUpdateDto> products, [FromQuery] string supplierId)
+    {
+        var repo = unit.Repository<Supplier>();
+        var spec = new BaseSpecification<Supplier>(s => s.UserId == supplierId);
+        var supplier = await repo.GetEntityWithSpecAsync(spec);
+        if (supplier == null)
+        {
+            return BadRequest(new ApiResponseDTO { Message = $"Supplier with ID '{supplierId}' does not exist." });
+        }
+        decimal totalPrice = 0;
+        try
+        {
+            foreach (var item in products)
+            {
+                if (string.IsNullOrEmpty(item.ProductId))
+                    return BadRequest(new ApiResponseDTO { Message = "Invalid ID" });
+                if (item.Quantity <= 0)
+                    return BadRequest(new ApiResponseDTO { Message = "Invalid Quantity" });
+                var product = await unit.Repository<Product>().GetByIdAsync(item.ProductId);
+                if (string.IsNullOrEmpty(product.Name))
+                    return NotFound();
+                product.SupplierId = supplier.Id;
+                product.CurrentStockQuantity += item.Quantity;
+
+                var StockTransaction = new StockTransaction()
+                {
+                    ProductId = item.ProductId,
+                    SupplierId = supplier.Id,
+                    Quantity = item.Quantity,
+                    Type = DAL.Models.SystemModels.Enums.TransactionType.StockIn,
+                    DateOfCreation = DateTime.UtcNow,
+                    UnitBuyPrice=product.BuyPrice,
+                    UnitSellPrice=product.SellPrice,
+                    Notes= "Updated via bulk product stock in"
+                };
+                totalPrice += (product.BuyPrice * item.Quantity);
+                await unit.Repository<StockTransaction>().AddAsync(StockTransaction);
+                await unit.Repository<Product>().UpdateAsync(product);
+            }
+
+            // 3. Generate Supplier Invoice
+            var supplierInvoice = new SupplierInvoice
+            {
+                SupplierId = supplier.Id,
+                Type = InvoiceType.SupplierInvoice,
+                SupplierName = supplier.Name,
+                Amount = totalPrice,
+                RemainingAmount = totalPrice,
+                DateOfCreation = DateTime.UtcNow
+            };
+            await unit.Repository<SupplierInvoice>().AddAsync(supplierInvoice);
+
+            var result = await unit.CompleteAsync();
+            if (result == 0)
+                return BadRequest(new ApiResponseDTO { Message = "Error occured while updating products" });
             return Ok(result);
             // return NoContent();
         }

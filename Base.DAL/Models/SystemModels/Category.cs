@@ -14,3 +14,8 @@ namespace Base.DAL.Models.SystemModels
         public virtual ICollection<Product> Products { get; set; }
     }
 }
+
+
+
+
+

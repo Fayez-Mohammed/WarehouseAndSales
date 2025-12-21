@@ -4,6 +4,7 @@
     {
         CustomerInvoice = 1,
         CommissionInvoice = 2,
-        SupplierInvoice = 3
+        SupplierInvoice = 3,
+        ReturnInvoice = 4
     }
 }
