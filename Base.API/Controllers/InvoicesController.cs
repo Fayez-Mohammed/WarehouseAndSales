@@ -16,7 +16,7 @@ namespace Base.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    [Authorize("SystemAdmin,Accountant,StoreManager")]
     public class InvoicesController : ControllerBase
     {
         private readonly IUnitOfWork unitOfWork;

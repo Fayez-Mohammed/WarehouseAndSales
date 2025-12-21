@@ -13,7 +13,7 @@ using System.Security.Claims;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize(Roles = "SystemAdmin,Accountant")]
+[Authorize(Roles = "SystemAdmin,Accountant,StoreManager")]
 public class AccountantProfilesController : ControllerBase
 {
     private readonly IUnitOfWork _unitOfWork;

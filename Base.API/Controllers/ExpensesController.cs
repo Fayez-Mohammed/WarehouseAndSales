@@ -12,7 +12,7 @@ namespace Base.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "Accountant,SystemAdmin")]
+    [Authorize(Roles = "SystemAdmin,Accountant,StoreManager")]
     public class ExpensesController : ControllerBase
     {
         private readonly IUnitOfWork _unitOfWork;

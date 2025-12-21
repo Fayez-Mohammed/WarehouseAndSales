@@ -13,7 +13,7 @@ namespace Base.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "SystemAdmin")]
+[Authorize(Roles = "SystemAdmin,Accountant,StoreManager")]
 public class SupplierController : ControllerBase
 {
     private readonly IUnitOfWork _unit;

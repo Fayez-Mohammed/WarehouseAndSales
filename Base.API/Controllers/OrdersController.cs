@@ -13,7 +13,7 @@ namespace Base.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    [Authorize("SystemAdmin,Accountant,StoreManager")]
     public class OrdersController : ControllerBase
     {
         private readonly IUnitOfWork unitOfWork;
@@ -29,7 +29,7 @@ namespace Base.API.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet("GetAllApprovedOrdersForCustomer")]
-      //  [Authorize(Roles = "Customer")]
+        [Authorize(Roles = "Customer")]
         public async Task<IActionResult> GetAllApprovedOrdersForCustomer()
         {
             var customerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -53,7 +53,7 @@ namespace Base.API.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet("GetAllPendingOrdersForSalesRepoToConfirmLater")]
-      //  [Authorize(Roles = "SalesRep")]
+        [Authorize(Roles = "SalesRep")]
         public async Task<IActionResult> GetAllPendingOrdersForSalesRepoToConfirmLater()
         {
             var salesRepId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -81,7 +81,7 @@ namespace Base.API.Controllers
         /// <param name="dto">Order details including items and optional SalesRepId.</param>
         /// <returns>The created Order ID.</returns>
         [HttpPost]
-     //   [Authorize(Roles = "Customer")] // Ensure only Customers can place orders
+        [Authorize(Roles = "Customer")] // Ensure only Customers can place orders
         public async Task<IActionResult> CreateOrder([FromBody] CreateOrderDto dto)
         {
             if (!ModelState.IsValid)

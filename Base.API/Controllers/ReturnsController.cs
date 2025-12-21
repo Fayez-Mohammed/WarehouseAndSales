@@ -18,7 +18,7 @@ namespace Base.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    [Authorize("SystemAdmin,Accountant,StoreManager")]
     public class ReturnsController : ControllerBase
     {
         private readonly IUnitOfWork _unitOfWork;
@@ -61,7 +61,7 @@ namespace Base.API.Controllers
             /// Create a return request (Customer)
             /// </summary>
             [HttpPost]
-        [Authorize(Roles = "Accountant,StoreManager")]
+     
         public async Task<IActionResult> CreateReturnRequest([FromBody] CreateReturnRequestDto dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -124,7 +124,7 @@ namespace Base.API.Controllers
         /// Get pending return requests (Store Manager)
         /// </summary>
         [HttpGet("pending")]
-        [Authorize(Roles = "StoreManager")]
+     
         public async Task<IActionResult> GetPendingReturns()
         {
             var spec = new BaseSpecification<ReturnRequest>(r => r.Status == ReturnStatus.Pending);

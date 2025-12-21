@@ -6,6 +6,7 @@ using Base.Shared.Responses; // Assuming you have ApiResponseDTO here
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using RepositoryProject.Specifications;
 using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -14,7 +15,7 @@ namespace Base.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "StoreManager")] // Only Store Managers should perform inventory checks
+    [Authorize(Roles = "SystemAdmin,Accountant,StoreManager")] // Only Store Managers should perform inventory checks
     public class InventoryCheckController : ControllerBase
     {
         private readonly IUnitOfWork _unitOfWork;
@@ -32,6 +33,7 @@ namespace Base.API.Controllers
         /// <param name="dto">The adjustment details including Product ID and Actual Quantity.</param>
         /// <returns>The result of the adjustment operation, including loss/profit details.</returns>
         [HttpPost("Adjust")]
+        //[Authorize(Roles = "StoreManager")] // Only Store Managers can adjust stock after inventory check
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]

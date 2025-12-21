@@ -15,7 +15,7 @@ namespace Base.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "StoreManager,Admin")]
+    [Authorize(Roles = "SystemAdmin,Accountant,StoreManager")]
     public class DashboardController : ControllerBase
     {
         private readonly IUnitOfWork _unitOfWork;
