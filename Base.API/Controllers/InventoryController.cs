@@ -114,10 +114,14 @@ public class InventoryController(IUnitOfWork unit
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> CreateProduct([FromQuery]string SupplierId,[FromBody] ProductDto productCreateDto)
     {
+
         var validate = await productValidator.ValidateAsync(productCreateDto);
         if (!validate.IsValid)
             return BadRequest(new ApiResponseDTO { Message = "Invalid Input parameters" });
-       
+        var repo = unit.Repository<Supplier>();
+        var spec = new BaseSpecification<Supplier>(s => s.UserId == SupplierId);
+        var supplier = await repo.GetEntityWithSpecAsync(spec);
+        decimal totalPrice = 0;
         try
         {
             var product = new Product()
@@ -134,6 +138,35 @@ public class InventoryController(IUnitOfWork unit
             };
 
             await unit.Repository<Product>().AddAsync(product);
+            totalPrice += (product.BuyPrice * product.CurrentStockQuantity);
+            // Create Stock Transaction Log
+            var stockLog = new StockTransaction
+            {
+                ProductId = product.Id,
+                SupplierId = supplier.Id,
+                Type = TransactionType.StockIn,
+                Quantity = product.CurrentStockQuantity,
+                DateOfCreation = DateTime.UtcNow,
+                UnitBuyPrice = product.BuyPrice,
+                UnitSellPrice = product.SellPrice,
+                Notes = "Updated via Single product addition"
+
+                // REMOVED: TransactionDate = DateTime.UtcNow 
+                // Your AppDbContext automatically fills 'DateOfCreation' which serves as the date.
+            };
+
+            await unit.Repository<StockTransaction>().AddAsync(stockLog);
+            // 3. Generate Supplier Invoice
+            var supplierInvoice = new SupplierInvoice
+            {
+                SupplierId = supplier.Id,
+                Type = InvoiceType.SupplierInvoice,
+                SupplierName = supplier.Name,
+                Amount = totalPrice,
+                RemainingAmount = totalPrice,
+                DateOfCreation = DateTime.UtcNow
+            };
+            await unit.Repository<SupplierInvoice>().AddAsync(supplierInvoice);
             var result = await unit.CompleteAsync();
             if (result == 0)
                 return BadRequest(new ApiResponseDTO { Message = "Error occured while adding product" });
