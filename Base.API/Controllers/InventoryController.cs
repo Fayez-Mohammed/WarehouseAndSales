@@ -17,7 +17,7 @@ namespace Base.API.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize(Roles = "Accountant,SystemAdmin,StoreManager")]
+[Authorize(Roles = "SystemAdmin,Accountant,StoreManager")]
 public class InventoryController(IUnitOfWork unit
    , ProductDtoValidation productValidator
    , ProductUpdateDtoValidation productUpdateValidator

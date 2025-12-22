@@ -18,7 +18,7 @@ namespace Base.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize("SystemAdmin,Accountant,StoreManager")]
+    [Authorize(Roles = "SystemAdmin,Accountant,StoreManager")]
     public class ReturnsController : ControllerBase
     {
         private readonly IUnitOfWork _unitOfWork;

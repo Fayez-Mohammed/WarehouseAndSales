@@ -13,7 +13,7 @@ namespace Base.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "Accountant,SystemAdmin,StoreManager")] // الصلاحيات: محاسب، أدمن، مدير مخزن
+    [Authorize(Roles = "SystemAdmin,Accountant,StoreManager")] // الصلاحيات: محاسب، أدمن، مدير مخزن
     public class ReportsController : ControllerBase
     {
         private readonly IUnitOfWork _unitOfWork;

@@ -12,7 +12,7 @@ namespace Base.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "SystemAdmin, StoreManager, Accountant")] // Adjust roles as needed, e.g., [Authorize(Roles = "StoreManager")]
+    [Authorize(Roles = "SystemAdmin,Accountant,StoreManager")]// Adjust roles as needed, e.g., [Authorize(Roles = "StoreManager")]
     public class CategoriesController : ControllerBase
     {
         private readonly IUnitOfWork _unitOfWork;

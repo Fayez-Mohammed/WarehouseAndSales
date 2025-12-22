@@ -15,7 +15,7 @@ namespace Base.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "SystemAdmin,Accountant,StoreManager")] // Only Store Managers should perform inventory checks
+    [Authorize(Roles = "SystemAdmin,Accountant,StoreManager")]// Only Store Managers should perform inventory checks
     public class InventoryCheckController : ControllerBase
     {
         private readonly IUnitOfWork _unitOfWork;
