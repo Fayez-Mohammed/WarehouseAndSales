@@ -17,6 +17,7 @@ namespace Base.API.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [Authorize(Roles = "SystemAdmin,Accountant,StoreManager")]
+
     public class InvoicesController : ControllerBase
     {
         private readonly IUnitOfWork unitOfWork;
@@ -311,27 +312,91 @@ namespace Base.API.Controllers
            [FromQuery] InvoiceType? invoiceType,
            [FromQuery] string? orderId,
            [FromQuery] string? recipientName,
-           
+           [FromQuery] string? recipientId,
+           [FromQuery] bool? lastInvoice,
            [FromQuery] DateTime? fromDate,
            [FromQuery] DateTime? toDate,
 
 
            [FromQuery] int page = 1,
            [FromQuery] int pageSize = 20){
+            if (invoiceType.HasValue && InvoiceType.SupplierInvoice == invoiceType.Value)
+            {
+                var repoS = unitOfWork.Repository<SupplierInvoice>();
+                var specS = new BaseSpecification<SupplierInvoice>(i =>
+                    (string.IsNullOrEmpty(search) || i.SupplierName.Contains(search)) &&
+                    (!invoiceType.HasValue || i.Type == InvoiceType.SupplierInvoice) &&
+                    (string.IsNullOrEmpty(recipientName) || i.SupplierName.Contains(recipientName)) &&
+                    (!fromDate.HasValue || i.DateOfCreation >= fromDate.Value) &&
+                    (!toDate.HasValue || i.DateOfCreation <= toDate.Value)
+                );
+                var totalItemsS = await repoS.CountAsync(specS);
+                specS.ApplyPaging((page - 1) * pageSize, pageSize);
+                var invoicesS = await repoS.ListAsync(specS);
+                var invoiceDTOsS = invoicesS.Select(i => new InvoiceDTO
+                {
+                    Id = i.Id,
+                    Type = i.Type,
+                    RecipientName = i.SupplierName,
+                    Amount = i.Amount,
+                    PaidAmount = i.PaidAmount,
+                    RemainingAmount = i.RemainingAmount,
+                    GeneratedDate = i.DateOfCreation,
 
-            var repo = unitOfWork.Repository<Invoice>();
-            if (repo == null) return NotFound();
-            var spec = new BaseSpecification<Invoice>(i =>
-                (string.IsNullOrEmpty(search) || i.RecipientName.Contains(search) || i.OrderId.Contains(search)) &&
-                (!invoiceType.HasValue || i.Type == invoiceType.Value) &&
-                (string.IsNullOrEmpty(orderId) || i.OrderId == orderId) &&
-                (string.IsNullOrEmpty(recipientName) || i.RecipientName.Contains(recipientName)) &&
-                (!fromDate.HasValue || i.DateOfCreation >= fromDate.Value) &&
-                (!toDate.HasValue || i.DateOfCreation <= toDate.Value)
-            );
+                }).ToList();
+                if (lastInvoice.HasValue && lastInvoice.Value)
+                {
+                    invoiceDTOsS = invoiceDTOsS
+                        .GroupBy(i => i.RecipientName)
+                        .Select(g => g.OrderByDescending(i => i.GeneratedDate).First())
+                        .ToList();
+                }
+                var pagedResultS = new PagedResult<InvoiceDTO>
+                {
+                    Items = invoiceDTOsS,
+                    TotalItems = totalItemsS,
+                    Page = page,
+                    PageSize = pageSize
+                };
+                return Ok(pagedResultS);
+            }
+           
+                var repo = unitOfWork.Repository<Invoice>();
+                if (repo == null) return NotFound();
+
+
+                var spec = new BaseSpecification<Invoice>(i =>
+                    (string.IsNullOrEmpty(search) || i.RecipientName.Contains(search) || i.OrderId.Contains(search)) &&
+                    (!invoiceType.HasValue || i.Type == invoiceType.Value) &&
+                    (string.IsNullOrEmpty(orderId) || i.OrderId == orderId) &&
+
+                    (string.IsNullOrEmpty(recipientName) || i.RecipientName.Contains(recipientName)) &&
+                     (
+                         string.IsNullOrEmpty(recipientId) ||
+
+                             (
+                                 (i.Type == InvoiceType.CustomerInvoice || i.Type == InvoiceType.ReturnInvoice) &&
+                                 i.Order.CustomerId == recipientId
+                                                  )
+                             ||
+                              (
+                                 i.Type == InvoiceType.CommissionInvoice &&
+                                 i.Order.SalesRepId == recipientId
+                             )
+                         )
+                                          &&
+                    (!fromDate.HasValue || i.DateOfCreation >= fromDate.Value) &&
+                    (!toDate.HasValue || i.DateOfCreation <= toDate.Value)
+                );
+                spec.Includes.Add(i => i.Order);
+            
+            
             var totalItems = await repo.CountAsync(spec);
             spec.ApplyPaging((page - 1) * pageSize, pageSize);
             var invoices = await repo.ListAsync(spec);
+
+
+
             var invoiceDTOs = invoices.Select(i => new InvoiceDTO
             {
                 Id = i.Id,
@@ -343,6 +408,13 @@ namespace Base.API.Controllers
                 GeneratedDate = i.DateOfCreation,
                 OrderId = i.OrderId
             }).ToList();
+            if (lastInvoice.HasValue && lastInvoice.Value)
+            {
+                invoiceDTOs = invoiceDTOs
+                    .GroupBy(i => i.RecipientName)
+                    .Select(g => g.OrderByDescending(i => i.GeneratedDate).First())
+                    .ToList();
+            }
             var pagedResult = new PagedResult<InvoiceDTO>
             {
                 Items = invoiceDTOs,
@@ -359,8 +431,12 @@ namespace Base.API.Controllers
         /// <param name="PayiedAmount"></param>
         /// <returns></returns>
         [HttpPut("PayedAmountFromCustomerByOrderId")]
-        public async Task<IActionResult> TakeOrderPriceFromCustomer([FromQuery] string orderId, [FromQuery] decimal PayiedAmount)
+        public async Task<IActionResult> TakeOrderPriceFromCustomer([FromQuery] CustomerOrSalesRep customerOrSalesRep, [FromQuery] string orderId, [FromQuery] decimal PayiedAmount)
         {
+            if(customerOrSalesRep == CustomerOrSalesRep.SalesRep)
+            {
+                return await PayCommissionToSalesRep(customerOrSalesRep, orderId, PayiedAmount);
+            }
             var repo = unitOfWork.Repository<Invoice>();
             if (repo == null) return NotFound();
             var spec = new BaseSpecification<Invoice>(i => i.OrderId == orderId && i.Type == InvoiceType.CustomerInvoice);
@@ -412,8 +488,12 @@ namespace Base.API.Controllers
         /// <param name="PayiedAmount"></param>
         /// <returns></returns>
         [HttpPut("PayCommissionToSalesRepByOrderId")]
-        public async Task<IActionResult> PayCommissionToSalesRep([FromQuery] string orderId, [FromQuery] decimal PayiedAmount)
+        public async Task<IActionResult> PayCommissionToSalesRep([FromQuery] CustomerOrSalesRep customerOrSalesRep,[FromQuery] string orderId, [FromQuery] decimal PayiedAmount)
         {
+            if(customerOrSalesRep == CustomerOrSalesRep.Customer)
+            {
+                return await TakeOrderPriceFromCustomer(customerOrSalesRep, orderId, PayiedAmount);
+            }
             var repo = unitOfWork.Repository<Invoice>();
             if (repo == null) return NotFound();
             var spec = new BaseSpecification<Invoice>(i => i.OrderId == orderId && i.Type == InvoiceType.CommissionInvoice);
@@ -550,7 +630,11 @@ namespace Base.API.Controllers
             return Ok(dto);
         }
     }
-
+    public enum CustomerOrSalesRep
+    {
+        Customer,
+        SalesRep
+    }
     internal class PagedResult<T>
     {
         public List<T> Items { get; set; }

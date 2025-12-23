@@ -82,7 +82,7 @@ internal class Program
             // 2. CRITICAL: Explicitly set the location of the swagger.json file.
             // The default endpoint path is usually '/swagger/v1/swagger.json'.
             // Your error is looking for '/v1/swagger.json' which is wrong.
-            options.SwaggerEndpoint("/swagger/v1/swagger.json", "EduGate API V1");
+            options.SwaggerEndpoint("/swagger/v1/swagger.json", "SmartWarehouse API V1");
         });
         //  }
         app.UseMiddleware<TokenBlacklistMiddleware>();
