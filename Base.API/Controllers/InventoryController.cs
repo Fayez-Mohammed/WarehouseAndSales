@@ -21,7 +21,7 @@ namespace Base.API.Controllers;
 public class InventoryController(IUnitOfWork unit
    , ProductDtoValidation productValidator
    , ProductUpdateDtoValidation productUpdateValidator
-   , ILogger<Product> logger,IUserService userService) : ControllerBase
+   , ILogger<Product> logger,IUserService userService, ProductWithCategoryNameDtoValidation productWithCategoryNameValidator,ProductUpdateWithCategoryNameDtoValidation productUpdateWithCategoryNameValidator) : ControllerBase
 {
     /// <summary>
     /// جلب جميع المنتجات مع التصفية والفرز
@@ -34,7 +34,7 @@ public class InventoryController(IUnitOfWork unit
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> GetAll([FromQuery] int skip, [FromQuery] int take)
+    public async Task<IActionResult> GetAll([FromQuery] int skip=0, [FromQuery] int take=10)
     {
 
         try
@@ -259,6 +259,90 @@ public class InventoryController(IUnitOfWork unit
             return StatusCode(500, new ApiResponseDTO { Message = "Error while creating products" });
         }
     }
+
+    /// <summary>
+    /// اضافة مجموعه من المنتجات مع اسم التصنيف
+    /// </summary>
+    /// <param name="SupplierId"></param>
+    /// <param name="productCreateWithNameDto"></param>
+    /// <returns></returns>
+    [HttpPost("ListOfProductsWithCategoryName")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> CreateListOfProducts([FromQuery] string SupplierId, [FromBody] List<ProductWithCategoryNameDto> productCreateWithNameDto)
+    {
+        //  ApplicationUser user =await userService.GetByIdAsync(SupplierId);
+        var repo = unit.Repository<Supplier>();
+        var spec = new BaseSpecification<Supplier>(s => s.UserId == SupplierId);
+        var supplier = await repo.GetEntityWithSpecAsync(spec);
+        decimal totalPrice = 0;
+        foreach (var productDto in productCreateWithNameDto)
+        {
+            var repoCategory = unit.Repository<Category>();
+            var specCategory = new BaseSpecification<Category>(c => c.Name == productDto.CategoryName);
+            var category = await repoCategory.GetEntityWithSpecAsync(specCategory);
+            var validate = await productWithCategoryNameValidator.ValidateAsync(productDto);
+            if (!validate.IsValid)
+                return BadRequest(new ApiResponseDTO { Message = "Invalid Input parameters" });
+            var product = new Product()
+            {
+                Name = productDto.ProductName,
+                SKU = productDto.SKU,
+                SellPrice = productDto.SalePrice,
+                BuyPrice = productDto.BuyPrice,
+                Description = productDto.Description,
+                CurrentStockQuantity = productDto.Quantity,
+                CategoryId = category.Id
+
+            };
+            totalPrice += (productDto.BuyPrice * productDto.Quantity);
+            await unit.Repository<Product>().AddAsync(product);
+
+            // Create Stock Transaction Log
+            var stockLog = new StockTransaction
+            {
+                ProductId = product.Id,
+                SupplierId = supplier.Id,
+                Type = TransactionType.StockIn,
+                Quantity = product.CurrentStockQuantity,
+                DateOfCreation = DateTime.UtcNow,
+                UnitBuyPrice = product.BuyPrice,
+                UnitSellPrice = product.SellPrice,
+                Notes = "Updated via bulk product addition"
+
+                // REMOVED: TransactionDate = DateTime.UtcNow 
+                // Your AppDbContext automatically fills 'DateOfCreation' which serves as the date.
+            };
+            await unit.Repository<StockTransaction>().AddAsync(stockLog);
+
+        }
+        try
+        {
+
+
+            // 3. Generate Supplier Invoice
+            var supplierInvoice = new SupplierInvoice
+            {
+                SupplierId = supplier.Id,
+                Type = InvoiceType.SupplierInvoice,
+                SupplierName = supplier.Name,
+                Amount = totalPrice,
+                RemainingAmount = totalPrice,
+                DateOfCreation = DateTime.UtcNow
+            };
+            await unit.Repository<SupplierInvoice>().AddAsync(supplierInvoice);
+            var result = await unit.CompleteAsync();
+            if (result == 0)
+                return BadRequest(new ApiResponseDTO { Message = "Error occured while adding products" });
+            return Ok(result);
+            // return Ok(new ApiResponseDTO { Data = result, StatusCode = StatusCodes.Status201Created });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new ApiResponseDTO { Message = "Error while creating products" });
+        }
+    }
     /// <summary>
     /// تحديث منتج موجود
     /// </summary>
@@ -282,8 +366,8 @@ public class InventoryController(IUnitOfWork unit
             var product = await unit.Repository<Product>().GetByIdAsync(productDto.ProductId);
             if (string.IsNullOrEmpty(product.Name))
                 return NotFound();
-            product.Name = productDto.ProductName;
-            product.SKU = productDto.SKU;
+            product.Name = productDto.ProductName??product.Name;
+            product.SKU = productDto.SKU??product.SKU;
             product.SellPrice = productDto.SellPrice;
             product.BuyPrice = productDto.BuyPrice;
             product.Description = productDto.Description;
@@ -294,6 +378,51 @@ public class InventoryController(IUnitOfWork unit
             if (result == 0)
                 return BadRequest(new ApiResponseDTO { Message = "Error occured while updating product" });
            return Ok(result);
+            //return Ok(new ApiResponseDTO { Data = result, StatusCode = StatusCodes.Status200OK });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new ApiResponseDTO { Message = "Error while updating product" });
+        }
+    }
+    /// <summary>
+    ///   تحديث منتج موجودمع اسم التصنيف
+    /// </summary>
+    /// <param name="productDto"></param>
+    /// <returns></returns>
+    [HttpPut("productsWithCategoryName")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> UpdateProduct([FromBody] ProductUpdateWithCategoryNameDto productDto)
+    {
+        var validate = await productUpdateWithCategoryNameValidator.ValidateAsync(productDto);
+
+        if (!validate.IsValid)
+        {
+            return BadRequest(new ApiResponseDTO { Message = "Invalid Input parameters" });
+        }
+
+        try
+        {
+            var repoCategory = unit.Repository<Category>();
+            var specCategory = new BaseSpecification<Category>(c => c.Name == productDto.CategoryName);
+            var category = await repoCategory.GetEntityWithSpecAsync(specCategory);
+            var product = await unit.Repository<Product>().GetByIdAsync(productDto.ProductId);
+            if (string.IsNullOrEmpty(product.Name))
+                return NotFound();
+            product.Name = productDto.ProductName ?? product.Name;
+            product.SKU = productDto.SKU ?? product.SKU;
+            product.SellPrice = productDto.SellPrice;
+            product.BuyPrice = productDto.BuyPrice;
+            product.Description = productDto.Description;
+            product.CategoryId = category.Id ?? product.CategoryId;
+
+            var result = await unit.CompleteAsync();
+
+            if (result == 0)
+                return BadRequest(new ApiResponseDTO { Message = "Error occured while updating product" });
+            return Ok(result);
             //return Ok(new ApiResponseDTO { Data = result, StatusCode = StatusCodes.Status200OK });
         }
         catch (Exception ex)

@@ -306,15 +306,35 @@ namespace Base.API.Controllers
                 });
             }
             // 3. Create the Order Entity
-            var order = new Order
+            if (dto.SalesRepId != null)
             {
-                CustomerId = dto.CustomerId,
-                TotalAmount = totalAmount,
-                Status = OrderStatus.Confirmed, // Directly Confirmed
-                OrderItems = orderItems,      // EF Core will insert these automatically
-                SalesRepId = dto.SalesRepId,   // Optional, can be null
-                CommissionAmount = 0.1m * totalAmount
-            };
+                var order2 = new Order
+                {
+                    CustomerId = dto.CustomerId,
+                    TotalAmount = totalAmount,
+                    Status = OrderStatus.Confirmed, // Directly Confirmed
+                    OrderItems = orderItems,      // EF Core will insert these automatically
+                    SalesRepId = dto.SalesRepId,   // Optional, can be null
+                    CommissionAmount = 0.1m * totalAmount
+                };
+                // 4. Save to Database
+                await unitOfWork.Repository<Order>().AddAsync(order2);
+                var result2 = await unitOfWork.CompleteAsync();
+                if (result2 <= 0)
+                    return StatusCode(500, "Failed to create order.");
+                return Ok(new { Message = "Order created and confirmed successfully", OrderId = order2.Id });
+            }
+            
+            
+                var order = new Order
+                {
+                    CustomerId = dto.CustomerId,
+                    TotalAmount = totalAmount,
+                    Status = OrderStatus.Confirmed, // Directly Confirmed
+                    OrderItems = orderItems,      // EF Core will insert these automatically
+                    CommissionAmount = 0m
+                };
+            
             // 4. Save to Database
             await unitOfWork.Repository<Order>().AddAsync(order);
             var result = await unitOfWork.CompleteAsync();

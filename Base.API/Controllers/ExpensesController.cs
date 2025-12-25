@@ -94,6 +94,7 @@ namespace Base.API.Controllers
                 Amount = e.Amount,
                 Description = e.Description,
                 //CreatedAt = e.CreatedAt,
+                CreatedAt = e.DateOfCreation,
                 AccountantUserId = e.AccountantUserId,
                 AccountantName = e.AccountantUser?.UserName
             });
@@ -122,6 +123,7 @@ namespace Base.API.Controllers
                 Amount = e.Amount,
                 Description = e.Description,
                // CreatedAt = e.CreatedAt,
+                CreatedAt = e.DateOfCreation,
                 AccountantUserId = e.AccountantUserId,
                 AccountantName = e.AccountantUser?.UserName
             });

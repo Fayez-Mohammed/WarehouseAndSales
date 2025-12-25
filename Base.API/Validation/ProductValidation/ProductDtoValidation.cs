@@ -18,3 +18,18 @@ public class ProductDtoValidation : AbstractValidator<ProductDto>
       .NotEmpty();
   }
 }
+public class ProductWithCategoryNameDtoValidation : AbstractValidator<ProductWithCategoryNameDto>
+{
+
+  public ProductWithCategoryNameDtoValidation()
+  {
+    RuleFor(x => x.Quantity)
+      .GreaterThan(0);
+    RuleFor(x => x.SalePrice)
+      .GreaterThan(0);
+    RuleFor(x => x.ProductName)
+      .NotEmpty();
+    RuleFor(x => x.SKU)
+      .NotEmpty();
+  }
+}

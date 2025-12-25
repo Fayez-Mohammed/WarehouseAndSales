@@ -32,7 +32,7 @@ namespace Base.API.Controllers
             var repo = _unitOfWork.Repository<Category>();
             // Use BaseSpecification to get all categories (no filter)
             // You can add .ApplyPaging(skip, take) here if you want pagination later
-            var spec = new BaseSpecification<Category>(c => true);
+            var spec = new BaseSpecification<Category>(c => true && c.IsDeleted == false);
 
             var categories = await repo.ListAsync(spec);
 
