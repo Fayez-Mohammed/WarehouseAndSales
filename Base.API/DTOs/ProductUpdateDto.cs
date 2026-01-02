@@ -20,7 +20,7 @@ public class ProductUpdateDto
     [Range(0.1, double.MaxValue)]
     public decimal BuyPrice { get; set; }
     [MaxLength(200)]
-    public string? CategoryId { get; set; }
+    public string? CategoryName { get; set; }
 }
 public class ProductUpdateWithCategoryNameDto
 {

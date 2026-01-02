@@ -55,13 +55,14 @@ namespace Base.API.Controllers
         /// تقرير حركة صنف معين (Stock Movement)
         /// </summary>
         [HttpGet("stock-movement")]
-        public async Task<IActionResult> GetStockMovementReport([FromQuery]string productId)
+        public async Task<IActionResult> GetStockMovementReport([FromQuery]string producName)
         {
-            var product = await _unitOfWork.Repository<Product>().GetByIdAsync(productId);
+            var specProduct = new BaseSpecification<Product>(p => p.Name == producName);
+            var product = await _unitOfWork.Repository<Product>().GetEntityWithSpecAsync(specProduct);
             if (product == null) return NotFound("Product not found");
 
             
-            var spec = new BaseSpecification<StockTransaction>(t => t.ProductId == productId);
+            var spec = new BaseSpecification<StockTransaction>(t => t.ProductId == product.Id);
             var transactions = await _unitOfWork.Repository<StockTransaction>().ListAsync(spec);
 
             var report = new StockMovementReportDto
@@ -69,14 +70,29 @@ namespace Base.API.Controllers
                 ProductId = product.Id,
                 ProductName = product.Name,
                 CurrentStock = product.CurrentStockQuantity,
-               
+
                 TotalIn = transactions
-                            .Where(t => t.Type == TransactionType.StockIn || (t.Type == TransactionType.Adjustment && t.Quantity > 0))
+                            .Where(t => t.Type == TransactionType.StockIn || t.Type == TransactionType.Return || (t.Type == TransactionType.Adjustment && t.Quantity > 0))
                             .Sum(t => Math.Abs(t.Quantity)),
-             
+                TotalInAdjusted = transactions
+                            .Where(t => t.Type == TransactionType.Adjustment && t.Quantity > 0)
+                            .Sum(t => t.Quantity),
+                TotalInPurchased = transactions
+                            .Where(t => t.Type == TransactionType.StockIn)
+                            .Sum(t => t.Quantity),
+                TotalInReturned = transactions
+                            .Where(t => t.Type == TransactionType.Return)
+                            .Sum(t => t.Quantity),
                 TotalOut = transactions
                             .Where(t => t.Type == TransactionType.StockOut || (t.Type == TransactionType.Adjustment && t.Quantity < 0))
+                            .Sum(t => Math.Abs(t.Quantity)),
+                TotalOutAdjusted = transactions
+                            .Where(t => t.Type == TransactionType.Adjustment && t.Quantity < 0)
+                            .Sum(t => Math.Abs(t.Quantity)),
+                TotalOutSold = transactions
+                            .Where(t => t.Type == TransactionType.StockOut)
                             .Sum(t => Math.Abs(t.Quantity))
+
             };
 
             return Ok(report);
@@ -86,7 +102,7 @@ namespace Base.API.Controllers
         /// تقرير عمولات المندوبين (Commissions)
         /// </summary>
         [HttpGet("commissions")]
-        public async Task<IActionResult> GetCommissionsReport([FromQuery] string? salesRepId)
+        public async Task<IActionResult> GetCommissionsReport([FromQuery] string? salesRepName)
         {
  
             var spec = new BaseSpecification<Invoice>(i => i.Type == InvoiceType.CommissionInvoice);
@@ -98,9 +114,9 @@ namespace Base.API.Controllers
             var invoices = await _unitOfWork.Repository<Invoice>().ListAsync(spec);
 
 
-            if (!string.IsNullOrEmpty(salesRepId))
+            if (!string.IsNullOrEmpty(salesRepName))
             {
-                invoices = invoices.Where(i => i.Order.SalesRepId == salesRepId ).ToList();
+                invoices = invoices.Where(i => i.Order.SalesRep.FullName.Contains(salesRepName)).ToList();
             }
 
 

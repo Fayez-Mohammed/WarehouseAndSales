@@ -14,6 +14,7 @@ namespace Base.DAL.Config.SystemConfig
 
             // 2. Properties
             builder.Property(c => c.Name).IsRequired().HasMaxLength(100);
+            builder.HasIndex(c => c.Name).IsUnique();
             builder.Property(c => c.Description).HasMaxLength(500);
 
             // 3. Fix Audit Fields (Avoid Cycles)

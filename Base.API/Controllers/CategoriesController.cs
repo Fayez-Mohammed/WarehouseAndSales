@@ -52,13 +52,15 @@ namespace Base.API.Controllers
         /// </summary>
         /// <param name="id"></param>
         /// <returns>Category details</returns>
-        [HttpGet("GetCategoryById")]
-        public async Task<IActionResult> GetCategoryById([FromQuery] string id)
+        [HttpGet("GetCategoryByName")]
+        public async Task<IActionResult> GetCategoryByName([FromQuery] string name)
         {
-            var category = await _unitOfWork.Repository<Category>().GetByIdAsync(id);
-
+         //   var category = await _unitOfWork.Repository<Category>().Get(name);
+         var repo = _unitOfWork.Repository<Category>();
+            var spec = new BaseSpecification<Category>(c => c.Name == name && c.IsDeleted == false);
+            var category = (await repo.ListAsync(spec)).FirstOrDefault();
             if (category == null)
-                return NotFound($"Category with ID {id} not found.");
+                return NotFound($"Category with Name {name} not found.");
 
             return Ok(new
             {

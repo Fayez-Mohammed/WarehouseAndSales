@@ -3,8 +3,8 @@ namespace Base.API.DTOs
 {
     public class CreateReturnRequestDto
     {
-        [Required]
-        public string CustomerId { get; set; }
+     //   [Required]
+      //  public string CustomerId { get; set; }
         [Required]
         public string OrderId { get; set; }
 
@@ -16,7 +16,7 @@ namespace Base.API.DTOs
     public class ReturnItemDto
     {
         [Required]
-        public string ProductId { get; set; }
+        public required string productName { get; set; }
 
         [Required]
         [Range(1, int.MaxValue, ErrorMessage = "Quantity must be at least 1.")]

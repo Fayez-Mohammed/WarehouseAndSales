@@ -6,6 +6,7 @@ using Base.Shared.Responses;
 using Hangfire.Server;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using RepositoryProject.Specifications;
 using System;
 using System.Collections.Generic;
@@ -33,7 +34,8 @@ namespace Base.API.Controllers
         {
             var repo = _unitOfWork.Repository<Order>();
             var spec = new BaseSpecification<Order>(o => o.Id == orderId);
-            spec.Includes.Add(o => o.OrderItems);
+            //spec.Includes.Add(o => o.OrderItems);
+            spec.AllIncludes.Add(Q=> Q.Include(o => o.OrderItems).ThenInclude(oi => oi.Product));
             var order = repo.GetEntityWithSpecAsync(spec).Result;
             if (order == null)
             {
@@ -49,6 +51,7 @@ namespace Base.API.Controllers
          var itemsDto= order.OrderItems.Select(oi => new OrderItemDto
             {
                 ProductId = oi.ProductId,
+                ProductName = oi.Product.Name,
                 Quantity = oi.Quantity,
                 UnitPrice = oi.UnitPrice,
                 CustomerId= order.CustomerId
@@ -71,12 +74,12 @@ namespace Base.API.Controllers
             // 1. Validate Order ownership & status
             // We need to fetch order items to verify quantities
             var orderSpec = new BaseSpecification<Order>(o => o.Id == dto.OrderId);
-            orderSpec.Includes.Add(o => o.OrderItems);
+            orderSpec.AllIncludes.Add(Q => Q.Include(o => o.OrderItems).ThenInclude(oi => oi.Product));
 
             var order = await _unitOfWork.Repository<Order>().GetEntityWithSpecAsync(orderSpec);
 
             if (order == null) return NotFound("Order not found.");
-            if (order.CustomerId != dto.CustomerId) return Forbid();
+            //if (order.CustomerId != dto.CustomerId) return Forbid();
             if (order.Status != OrderStatus.Approved)
                 return BadRequest("Can only return items from Approved (Delivered) orders.");
 
@@ -85,19 +88,19 @@ namespace Base.API.Controllers
             foreach (var itemDto in dto.Items)
             {
                 // Check if this product was actually in the order
-                var originalItem = order.OrderItems.FirstOrDefault(oi => oi.ProductId == itemDto.ProductId);
+                var originalItem = order.OrderItems.FirstOrDefault(oi => oi.Product.Name == itemDto.productName);
                 if (originalItem == null)
-                    return BadRequest($"Product {itemDto.ProductId} was not found in this order.");
+                    return BadRequest($"Product {itemDto.productName} was not found in this order.");
 
                 if (itemDto.Quantity > originalItem.Quantity)
-                    return BadRequest($"Cannot return {itemDto.Quantity} of product {itemDto.ProductId}. Only {originalItem.Quantity} purchased.");
+                    return BadRequest($"Cannot return {itemDto.Quantity} of product {itemDto.productName}. Only {originalItem.Quantity} purchased.");
 
                 // Note: Ideally, check previously returned quantity to prevent double returns.
                 // Skipping for V1 simplicity.
 
                 returnItems.Add(new ReturnItem
                 {
-                    ProductId = itemDto.ProductId,
+                    ProductId = originalItem.ProductId,
                     Quantity = itemDto.Quantity,
                     Reason = itemDto.Reason
                 });
@@ -107,7 +110,7 @@ namespace Base.API.Controllers
             var returnRequest = new ReturnRequest
             {
                 OrderId = dto.OrderId,
-                CustomerId = dto.CustomerId,
+                CustomerId = order.CustomerId,
                 Status = ReturnStatus.Pending,
                 ReturnItems = returnItems
             };
@@ -117,7 +120,9 @@ namespace Base.API.Controllers
 
             if (result <= 0) return StatusCode(500, "Failed to create return request.");
 
-            return Ok(new { Message = "Return request submitted successfully.", RequestId = returnRequest.Id });
+           await ApproveReturnRequest(returnRequest.Id);
+          //  return Ok(new { Message = "Return request submitted successfully.", RequestId = returnRequest.Id });
+            return Ok(new { Message = "Return approved and items restocked.", RequestId = returnRequest.Id });
         }
 
         /// <summary>

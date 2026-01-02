@@ -21,6 +21,6 @@ public class ProductReturnDto
     [MaxLength(200)]
     public string? Description { get; set; }
     [MaxLength(200)]
-
+    public string? CategoryName { get; set; } = null;
     public string? CategoryId { get; set; }
 }

@@ -19,6 +19,7 @@ namespace Base.DAL.Config.BaseConfig
         {
             builder.HasKey(u => u.Id);
             builder.Property(u => u.FullName).IsRequired().HasMaxLength(150);
+            builder.HasIndex(f=> f.FullName).IsUnique();
             //builder.Property(u => u.UserType).IsRequired().HasMaxLength(50);
 
             builder.Property(u => u.Type).HasConversion(v => v.ToString(),

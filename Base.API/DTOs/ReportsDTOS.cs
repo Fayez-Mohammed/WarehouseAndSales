@@ -15,7 +15,13 @@ namespace Base.API.DTOs
         public string ProductId { get; set; }
         public string ProductName { get; set; }
         public int TotalIn { get; set; }
+        public int TotalInPurchased { get; set; }
+        public int TotalInReturned { get; set; }
+        public int TotalInAdjusted { get; set; }
         public int TotalOut { get; set; }
+        public int TotalOutSold { get; set; }
+        public int TotalOutAdjusted { get; set; }
+
         public int CurrentStock { get; set; }
     }
 

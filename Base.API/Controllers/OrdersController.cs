@@ -3,9 +3,12 @@ using Base.DAL.Models.BaseModels;
 using Base.DAL.Models.SystemModels;
 using Base.DAL.Models.SystemModels.Enums;
 using Base.Repo.Interfaces;
+using Base.Shared.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using RepositoryProject.Specifications;
 using System.Security.Claims;
 
@@ -24,124 +27,123 @@ namespace Base.API.Controllers
             this.unitOfWork = unitOfWork;
             this.userManager = userManager;
         }
-        /// <summary>
-        /// Gets all approved orders for the logged-in customer.   Not Used Currently
-        /// </summary>
-        /// <returns></returns>
-        [HttpGet("GetAllApprovedOrdersForCustomer")]
-        [Authorize(Roles = "Customer")]
-        public async Task<IActionResult> GetAllApprovedOrdersForCustomer()
-        {
-            var customerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var repo= unitOfWork.Repository<Order>();
-            var spec = new BaseSpecification<Order>(o => o.Status == OrderStatus.Approved && o.CustomerId == customerId);
-            var approvedOrders = await repo.ListAsync(spec);
-            var approvedOrdersDto = approvedOrders.Select(o => new
-            {
-                o.Id,
-                o.TotalAmount,
-               // o.CommissionAmount,
-                o.Status,
-                o.CustomerId,
-                o.SalesRepId,
-                o.DateOfCreation
-            });
-            return Ok(approvedOrdersDto);
-        }
-        /// <summary>
-        ///  Not Used Currently
-        /// </summary>
-        /// <returns></returns>
-        [HttpGet("GetAllPendingOrdersForSalesRepoToConfirmLater")]
-        [Authorize(Roles = "SalesRep")]
-        public async Task<IActionResult> GetAllPendingOrdersForSalesRepoToConfirmLater()
-        {
-            var salesRepId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var repo= unitOfWork.Repository<Order>();
-            var spec = new BaseSpecification<Order>(o => o.Status == OrderStatus.Pending && o.SalesRepId == salesRepId);
+        ///// <summary>
+        ///// Gets all approved orders for the logged-in customer.   Not Used Currently
+        ///// </summary>
+        ///// <returns></returns>
+        //[HttpGet("GetAllApprovedOrdersForCustomer")]
+        //[Authorize(Roles = "Customer")]
+        //public async Task<IActionResult> GetAllApprovedOrdersForCustomer()
+        //{
+        //    var customerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        //    var repo= unitOfWork.Repository<Order>();
+        //    var spec = new BaseSpecification<Order>(o => o.Status == OrderStatus.Approved && o.CustomerId == customerId);
+        //    var approvedOrders = await repo.ListAsync(spec);
+        //    var approvedOrdersDto = approvedOrders.Select(o => new
+        //    {
+        //        o.Id,
+        //        o.TotalAmount,
+        //       // o.CommissionAmount,
+        //        o.Status,
+        //        o.CustomerId,
+        //        o.SalesRepId,
+        //        o.DateOfCreation
+        //    });
+        //    return Ok(approvedOrdersDto);
+        //}
+        ///// <summary>
+        /////  Not Used Currently
+        ///// </summary>
+        ///// <returns></returns>
+        //[HttpGet("GetAllPendingOrdersForSalesRepoToConfirmLater")]
+        //[Authorize(Roles = "SalesRep")]
+        //public async Task<IActionResult> GetAllPendingOrdersForSalesRepoToConfirmLater()
+        //{
+        //    var salesRepId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        //    var repo= unitOfWork.Repository<Order>();
+        //    var spec = new BaseSpecification<Order>(o => o.Status == OrderStatus.Pending && o.SalesRepId == salesRepId);
 
-            var pendingOrders = await repo.ListAsync(spec);
-            var pendingOrdersDto = pendingOrders.Select(o => new
-            {
-                o.Id,
-                o.TotalAmount,
-                o.CommissionAmount,
-                o.Status,
-                o.CustomerId,
-                o.SalesRepId,
-                o.DateOfCreation
-            });
-            return Ok(pendingOrdersDto);
-        }
+        //    var pendingOrders = await repo.ListAsync(spec);
+        //    var pendingOrdersDto = pendingOrders.Select(o => new
+        //    {
+        //        o.Id,
+        //        o.TotalAmount,
+        //        o.CommissionAmount,
+        //        o.Status,
+        //        o.CustomerId,
+        //        o.SalesRepId,
+        //        o.DateOfCreation
+        //    });
+        //    return Ok(pendingOrdersDto);
+        //}
 
-        /// <summary>
-        /// Creates a new order for the logged-in customer.  Not Used Currently
-        /// Status defaults to 'Pending'.
-        /// </summary>
-        /// <param name="dto">Order details including items and optional SalesRepId.</param>
-        /// <returns>The created Order ID.</returns>
-        [HttpPost]
-        [Authorize(Roles = "Customer")] // Ensure only Customers can place orders
-        public async Task<IActionResult> CreateOrder([FromBody] CreateOrderDto dto)
-        {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+        ///// <summary>
+        ///// Creates a new order for the logged-in customer.  Not Used Currently
+        ///// Status defaults to 'Pending'.
+        ///// </summary>
+        ///// <param name="dto">Order details including items and optional SalesRepId.</param>
+        ///// <returns>The created Order ID.</returns>
+        //[HttpPost]
+        //[Authorize(Roles = "Customer")] // Ensure only Customers can place orders
+        //public async Task<IActionResult> CreateOrder([FromBody] CreateOrderDto dto)
+        //{
+        //    if (!ModelState.IsValid)
+        //        return BadRequest(ModelState);
 
-            // 1. Get Logged-in User ID
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+        //    // 1. Get Logged-in User ID
+        //    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        //    if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
-            // 2. Prepare Order Items & Calculate Total
-            decimal totalAmount = 0;
-            var orderItems = new List<OrderItem>();
-            var productRepo = unitOfWork.Repository<Product>();
+        //    // 2. Prepare Order Items & Calculate Total
+        //    decimal totalAmount = 0;
+        //    var orderItems = new List<OrderItem>();
+        //    var productRepo = unitOfWork.Repository<Product>();
 
-            foreach (var itemDto in dto.Items)
-            {
-                var product = await productRepo.GetByIdAsync(itemDto.ProductId);
-                if (product == null)
-                    return BadRequest($"Product with ID {itemDto.ProductId} not found.");
+        //    foreach (var itemDto in dto.Items)
+        //    {
+        //        var product = await productRepo.GetByIdAsync(itemDto.ProductId);
+        //        if (product == null)
+        //            return BadRequest($"Product with ID {itemDto.ProductId} not found.");
 
-                // Optional: Check stock availability (don't deduct yet, just validate)
-                if (product.CurrentStockQuantity < itemDto.Quantity)
-                {
-                    return BadRequest($"Insufficient stock for product '{product.Name}'. Available: {product.CurrentStockQuantity}");
-                }
+        //        // Optional: Check stock availability (don't deduct yet, just validate)
+        //        if (product.CurrentStockQuantity < itemDto.Quantity)
+        //        {
+        //            return BadRequest($"Insufficient stock for product '{product.Name}'. Available: {product.CurrentStockQuantity}");
+        //        }
 
-                // Calculate price for this line item
-                decimal itemTotal = product.SellPrice * itemDto.Quantity;
-                totalAmount += itemTotal;
+        //        // Calculate price for this line item
+        //        decimal itemTotal = product.SellPrice * itemDto.Quantity;
+        //        totalAmount += itemTotal;
 
-                // Create OrderItem (Price Snapshot)
-                orderItems.Add(new OrderItem
-                {
-                    ProductId = itemDto.ProductId,
-                    Quantity = itemDto.Quantity,
-                    UnitPrice = product.SellPrice // Capture price at moment of order
-                });
-            }
+        //        // Create OrderItem (Price Snapshot)
+        //        orderItems.Add(new OrderItem
+        //        {
+        //            ProductId = itemDto.ProductId,
+        //            Quantity = itemDto.Quantity,
+        //            UnitPrice = product.SellPrice // Capture price at moment of order
+        //        });
+        //    }
 
-            // 3. Create the Order Entity
-            var order = new Order
-            {
-                CustomerId = userId,
-                TotalAmount = totalAmount,
-                Status = OrderStatus.Pending, // Default Status
-                OrderItems = orderItems,      // EF Core will insert these automatically
-                SalesRepId = dto.SalesRepId,   // Optional, can be null
-                CommissionAmount=0.1m*totalAmount
-             };
+        //    // 3. Create the Order Entity
+        //    var order = new Order
+        //    {
+        //        CustomerId = userId,
+        //        TotalAmount = totalAmount,
+        //        Status = OrderStatus.Pending, // Default Status
+        //        OrderItems = orderItems,      // EF Core will insert these automatically
+        //        SalesRepId = dto.SalesRepId,   // Optional, can be null
+        //        CommissionAmount=0.1m*totalAmount
+        //     };
 
-            // 4. Save to Database
-            await unitOfWork.Repository<Order>().AddAsync(order);
-            var result = await unitOfWork.CompleteAsync();
+        //    // 4. Save to Database
+        //    await unitOfWork.Repository<Order>().AddAsync(order);
+        //    var result = await unitOfWork.CompleteAsync();
 
-            if (result <= 0)
-                return StatusCode(500, "Failed to create order.");
+        //    if (result <= 0)
+        //        return StatusCode(500, "Failed to create order.");
 
-            return Ok(new { Message = "Order created successfully", OrderId = order.Id });
-        }
-
+        //    return Ok(new { Message = "Order created successfully", OrderId = order.Id });
+        //}
 
 
         /// <summary>
@@ -242,33 +244,175 @@ namespace Base.API.Controllers
 
             return Ok(new { Message = "Order Approved and Stock Deducted" });
         }
-        /// <summary>
-        ///  Not Used Currently
-        /// </summary>
-        /// <param name="orderId"></param>
-        /// <returns></returns>
-        [HttpPut("Approve_Order_By_SalesRep")]
-        [Authorize(Roles = "SalesRep")]
-        public async Task<IActionResult> ConfirmOrder([FromQuery] string orderId)
-        {
-            var salesRepId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            // 1. Get Order
-            var order = await unitOfWork.Repository<Order>().GetByIdAsync(orderId);
-            if (order == null) return NotFound("Order not found");
-            if (order.Status != OrderStatus.Pending)
-                return BadRequest("Only Pending orders can be confirmed.");
-            // 2. Calculate Commission (e.g., 10% of TotalAmount)
+        //        ///// <summary>
+        //        /////  Not Used Currently
+        //        ///// </summary>
+        //        ///// <param name="orderId"></param>
+        //        ///// <returns></returns>
+        //        //[HttpPut("Approve_Order_By_SalesRep")]
+        //        //[Authorize(Roles = "SalesRep")]
+        //        //public async Task<IActionResult> ConfirmOrder([FromQuery] string orderId)
+        //        //{
+        //        //    var salesRepId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        //        //    // 1. Get Order
+        //        //    var order = await unitOfWork.Repository<Order>().GetByIdAsync(orderId);
+        //        //    if (order == null) return NotFound("Order not found");
+        //        //    if (order.Status != OrderStatus.Pending)
+        //        //        return BadRequest("Only Pending orders can be confirmed.");
+        //        //    // 2. Calculate Commission (e.g., 10% of TotalAmount)
 
-            decimal commissionRate = 0.10m; // 10%
-            order.CommissionAmount = order.TotalAmount * commissionRate;
-            order.Status = OrderStatus.Confirmed;
-            order.SalesRepId = salesRepId;
-            await unitOfWork.Repository<Order>().UpdateAsync(order);
-            var result = await unitOfWork.CompleteAsync();
-            if (result <= 0)
-                return StatusCode(500, "Failed to confirm order.");
-            return Ok(new { Message = $"Order With ID= [{order.Id}] confirmed by Sales Rep", CommissionAmount = order.CommissionAmount });
-        }
+        //        //    decimal commissionRate = 0.10m; // 10%
+        //        //    order.CommissionAmount = order.TotalAmount * commissionRate;
+        //        //    order.Status = OrderStatus.Confirmed;
+        //        //    order.SalesRepId = salesRepId;
+        //        //    await unitOfWork.Repository<Order>().UpdateAsync(order);
+        //        //    var result = await unitOfWork.CompleteAsync();
+        //        //    if (result <= 0)
+        //        //        return StatusCode(500, "Failed to confirm order.");
+        //        //    return Ok(new { Message = $"Order With ID= [{order.Id}] confirmed by Sales Rep", CommissionAmount = order.CommissionAmount });
+        //        //}
+        //        //////////////////////////
+        //        /// <summary>
+        //        /// انشاء طلب وتأكيده مباشرة من قبل مدير المتجر نيابة عن عميل معين
+        //        /// </summary>
+        //        /// <param name="dto"></param>
+        //        /// <returns></returns>
+        //        [HttpPost("Create_Order_By_Store_Manager_By_Customer_Id_And_SalesRepId")]
+        //        [Authorize(Roles = "StoreManager")]
+        //        public async Task<IActionResult> CreateOrderByStoreManagerByCustomerIdAndSalesRepId([FromBody] CreateOrderByManagerDto dto, [FromQuery] decimal? CommissionPercentage =10m)
+        //        {
+        //            if (!ModelState.IsValid)
+        //                return BadRequest(ModelState);
+        //            // 1. Validate Customer
+        //            // var customer = await userManager.FindByIdAsync(dto.CustomerId);
+        //            //var customer = await userManager.FindByNameAsync(dto.CustomerName);
+        //            //if (customer == null || !await userManager.IsInRoleAsync(customer, "Customer"))
+        //            //    return BadRequest("Invalid Customer ID.");
+
+
+
+        //            var query = userManager.Users
+        //    .Where(u => u.UserName == dto.CustomerName);
+
+        //            var count = await query.CountAsync();
+
+        //            if (count == 0)
+        //                return BadRequest("Customer not found");
+
+        //            if (count > 1)
+        //                return BadRequest("Multiple customers found with the same name");
+
+        //            var customer = await query.FirstAsync();
+        //            if (customer == null || !await userManager.IsInRoleAsync(customer, "Customer"))
+        //                return BadRequest("Invalid Customer Name.");
+        //            // 2. Prepare Order Items & Calculate Total
+        //            decimal totalAmount = 0;
+        //            var orderItems = new List<OrderItem>();
+        //            var productRepo = unitOfWork.Repository<Product>();
+        //            foreach (var itemDto in dto.Items)
+        //            {
+        //                var product = await productRepo.GetByIdAsync(itemDto.ProductId);
+        //                if (product == null)
+        //                    return BadRequest($"Product with ID {itemDto.ProductId} not found.");
+        //                // Calculate price for this line item
+        //                decimal itemTotal = product.SellPrice * itemDto.Quantity;
+        //                totalAmount += itemTotal;
+        //                // Create OrderItem (Price Snapshot)
+        //                orderItems.Add(new OrderItem
+        //                {
+        //                    ProductId = itemDto.ProductId,
+        //                    Quantity = itemDto.Quantity,
+        //                    UnitPrice = product.SellPrice // Capture price at moment of order
+        //                });
+        //            }
+        //            // 3. Create the Order Entity
+        //            if (dto.SalesRepName != null)
+        //            {
+        //                //var Salesrep = await userManager.FindByNameAsync(dto.SalesRepName);
+        //                var query2 = userManager.Users
+        //.Where(u => u.UserName == dto.SalesRepName);
+
+        //                var count2 = await query2.CountAsync();
+
+        //                if (count2 == 0)
+        //                    return BadRequest("Sales Representative not found");
+
+        //                if (count2 > 1)
+        //                    return BadRequest("Multiple Sales Representatives found with the same name");
+
+        //                var Salesrep = await query2.FirstAsync();
+        //                if (Salesrep == null || !await userManager.IsInRoleAsync(Salesrep, "SalesRep"))
+        //                    return BadRequest("Invalid Sales Representative Name.");
+
+
+        //                    var order2 = new Order
+        //                    {
+        //                        CustomerId = customer.Id,
+        //                        TotalAmount = totalAmount,
+        //                        Status = OrderStatus.Confirmed, // Directly Confirmed
+        //                        OrderItems = orderItems,      // EF Core will insert these automatically
+        //                        SalesRepId = Salesrep.Id,   // Optional, can be null
+        //                        CommissionAmount = ((CommissionPercentage ?? 10m) / 100m) * totalAmount
+        //                    };
+
+        //                    // 4. Save to Database
+        //                    await unitOfWork.Repository<Order>().AddAsync(order2);
+        //                    var result2 = await unitOfWork.CompleteAsync();
+        //                    if (result2 <= 0)
+        //                        return StatusCode(500, "Failed to create order.");
+
+        //                    await ApproveOrder(order2.Id);
+
+        //                    return Ok(new { Message = "Order created and confirmed successfully", OrderId = order2.Id });
+
+        //            }
+
+
+        //                var order = new Order
+        //                {
+        //                    CustomerId = customer.Id,
+        //                    TotalAmount = totalAmount,
+        //                    Status = OrderStatus.Confirmed, // Directly Confirmed
+        //                    OrderItems = orderItems,      // EF Core will insert these automatically
+        //                    CommissionAmount = 0m
+        //                };
+
+        //            // 4. Save to Database
+        //            await unitOfWork.Repository<Order>().AddAsync(order);
+        //            var result = await unitOfWork.CompleteAsync();
+        //            if (result <= 0)
+        //                return StatusCode(500, "Failed to create order.");
+
+        //            await ApproveOrder(order.Id);
+        //            return Ok(new { Message = "Order created and confirmed successfully", OrderId = order.Id });
+        //        }
+        ///// <summary>
+        /////  Not Used Currently
+        ///// </summary>
+        ///// <param name="orderId"></param>
+        ///// <returns></returns>
+        //[HttpPut("Approve_Order_By_SalesRep")]
+        //[Authorize(Roles = "SalesRep")]
+        //public async Task<IActionResult> ConfirmOrder([FromQuery] string orderId)
+        //{
+        //    var salesRepId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        //    // 1. Get Order
+        //    var order = await unitOfWork.Repository<Order>().GetByIdAsync(orderId);
+        //    if (order == null) return NotFound("Order not found");
+        //    if (order.Status != OrderStatus.Pending)
+        //        return BadRequest("Only Pending orders can be confirmed.");
+        //    // 2. Calculate Commission (e.g., 10% of TotalAmount)
+
+        //    decimal commissionRate = 0.10m; // 10%
+        //    order.CommissionAmount = order.TotalAmount * commissionRate;
+        //    order.Status = OrderStatus.Confirmed;
+        //    order.SalesRepId = salesRepId;
+        //    await unitOfWork.Repository<Order>().UpdateAsync(order);
+        //    var result = await unitOfWork.CompleteAsync();
+        //    if (result <= 0)
+        //        return StatusCode(500, "Failed to confirm order.");
+        //    return Ok(new { Message = $"Order With ID= [{order.Id}] confirmed by Sales Rep", CommissionAmount = order.CommissionAmount });
+        //}
         //////////////////////////
         /// <summary>
         /// انشاء طلب وتأكيده مباشرة من قبل مدير المتجر نيابة عن عميل معين
@@ -277,69 +421,112 @@ namespace Base.API.Controllers
         /// <returns></returns>
         [HttpPost("Create_Order_By_Store_Manager_By_Customer_Id_And_SalesRepId")]
         [Authorize(Roles = "StoreManager")]
-        public async Task<IActionResult> CreateOrderByStoreManagerByCustomerIdAndSalesRepId([FromBody] CreateOrderByManagerDto dto)
+        public async Task<IActionResult> CreateOrderByStoreManagerByCustomerIdAndSalesRepId([FromBody] CreateOrderByManagerDto dto, [FromQuery] decimal? CommissionPercentage = 10m)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
             // 1. Validate Customer
-            var customer = await userManager.FindByIdAsync(dto.CustomerId);
+            // var customer = await userManager.FindByIdAsync(dto.CustomerId);
+            //var customer = await userManager.FindByNameAsync(dto.CustomerName);
+            //if (customer == null || !await userManager.IsInRoleAsync(customer, "Customer"))
+            //    return BadRequest("Invalid Customer ID.");
+
+
+
+            var query = userManager.Users
+    .Where(u => u.FullName.Contains(dto.CustomerName) && u.Type == UserTypes.Customer);
+
+            var count = await query.CountAsync();
+
+            if (count == 0)
+                return BadRequest("Customer not found");
+
+            if (count > 1)
+                return BadRequest("Multiple customers found with the same name");
+
+            var customer = await query.FirstAsync();
             if (customer == null || !await userManager.IsInRoleAsync(customer, "Customer"))
-                return BadRequest("Invalid Customer ID.");
+                return BadRequest("Invalid Customer Name.");
             // 2. Prepare Order Items & Calculate Total
             decimal totalAmount = 0;
             var orderItems = new List<OrderItem>();
             var productRepo = unitOfWork.Repository<Product>();
             foreach (var itemDto in dto.Items)
             {
-                var product = await productRepo.GetByIdAsync(itemDto.ProductId);
+                var spec= new BaseSpecification<Product>(p => p.Name == itemDto.ProductName);
+                var product = await productRepo.GetEntityWithSpecAsync(spec);
                 if (product == null)
-                    return BadRequest($"Product with ID {itemDto.ProductId} not found.");
+                    return BadRequest($"Product with Name {itemDto.ProductName} not found.");
                 // Calculate price for this line item
                 decimal itemTotal = product.SellPrice * itemDto.Quantity;
                 totalAmount += itemTotal;
                 // Create OrderItem (Price Snapshot)
                 orderItems.Add(new OrderItem
                 {
-                    ProductId = itemDto.ProductId,
+                    ProductId = product.Id,
                     Quantity = itemDto.Quantity,
                     UnitPrice = product.SellPrice // Capture price at moment of order
                 });
             }
             // 3. Create the Order Entity
-            if (dto.SalesRepId != null)
+            if (!dto.SalesRepName.IsNullOrEmpty())
             {
+                //var Salesrep = await userManager.FindByNameAsync(dto.SalesRepName);
+                var query2 = userManager.Users
+.Where(u => u.FullName.Contains(dto.SalesRepName) && u.Type == UserTypes.SalesRep);
+
+                var count2 = await query2.CountAsync();
+
+                if (count2 == 0)
+                    return BadRequest("Sales Representative not found");
+
+                if (count2 > 1)
+                    return BadRequest("Multiple Sales Representatives found with the same name");
+
+                var Salesrep = await query2.FirstAsync();
+                if (Salesrep == null || !await userManager.IsInRoleAsync(Salesrep, "SalesRep"))
+                    return BadRequest("Invalid Sales Representative Name.");
+
+
                 var order2 = new Order
                 {
-                    CustomerId = dto.CustomerId,
+                    CustomerId = customer.Id,
                     TotalAmount = totalAmount,
                     Status = OrderStatus.Confirmed, // Directly Confirmed
                     OrderItems = orderItems,      // EF Core will insert these automatically
-                    SalesRepId = dto.SalesRepId,   // Optional, can be null
-                    CommissionAmount = 0.1m * totalAmount
+                    SalesRepId = Salesrep.Id,   // Optional, can be null
+                    CommissionAmount = ((CommissionPercentage ?? 10m) / 100m) * totalAmount
                 };
+
                 // 4. Save to Database
                 await unitOfWork.Repository<Order>().AddAsync(order2);
                 var result2 = await unitOfWork.CompleteAsync();
                 if (result2 <= 0)
                     return StatusCode(500, "Failed to create order.");
+
+                await ApproveOrder(order2.Id);
+
                 return Ok(new { Message = "Order created and confirmed successfully", OrderId = order2.Id });
+
             }
-            
-            
-                var order = new Order
-                {
-                    CustomerId = dto.CustomerId,
-                    TotalAmount = totalAmount,
-                    Status = OrderStatus.Confirmed, // Directly Confirmed
-                    OrderItems = orderItems,      // EF Core will insert these automatically
-                    CommissionAmount = 0m
-                };
-            
+
+
+            var order = new Order
+            {
+                CustomerId = customer.Id,
+                TotalAmount = totalAmount,
+                Status = OrderStatus.Confirmed, // Directly Confirmed
+                OrderItems = orderItems,      // EF Core will insert these automatically
+                CommissionAmount = 0m
+            };
+
             // 4. Save to Database
             await unitOfWork.Repository<Order>().AddAsync(order);
             var result = await unitOfWork.CompleteAsync();
             if (result <= 0)
                 return StatusCode(500, "Failed to create order.");
+
+            await ApproveOrder(order.Id);
             return Ok(new { Message = "Order created and confirmed successfully", OrderId = order.Id });
         }
         /// <summary>
@@ -347,7 +534,7 @@ namespace Base.API.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet("GetAllConfirmedOrders")]
-        [Authorize(Roles = "StoreManager")]
+      //  [Authorize(Roles = "StoreManager")]
         public async Task<IActionResult> GetAllConfirmedOrders()
         {
             var repo = unitOfWork.Repository<Order>();
@@ -371,7 +558,7 @@ namespace Base.API.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet("GetAllApprovedOrders")]
-        [Authorize(Roles = "StoreManager")]
+      //  [Authorize(Roles = "StoreManager")]
         public async Task<IActionResult> GetAllApprovedOrders()
         {
             var repo = unitOfWork.Repository<Order>();

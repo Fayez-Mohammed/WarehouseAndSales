@@ -4,6 +4,7 @@ using Base.DAL.Contexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Base.DAL.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260101165532_makeskuNullable")]
+    partial class makeskuNullable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -333,9 +336,6 @@ namespace Base.DAL.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CreatedById");
-
-                    b.HasIndex("Name")
-                        .IsUnique();
 
                     b.HasIndex("UpdatedById");
 
@@ -765,9 +765,6 @@ namespace Base.DAL.Migrations
                     b.HasIndex("CreatedById");
 
                     b.HasIndex("InventoryId");
-
-                    b.HasIndex("Name")
-                        .IsUnique();
 
                     b.HasIndex("SupplierId");
 

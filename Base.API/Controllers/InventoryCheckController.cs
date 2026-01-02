@@ -31,6 +31,7 @@ namespace Base.API.Controllers
         /// جرد المخزون وتعديل الكميات بناءً على الفحص الفعلي.
         /// </summary>
         /// <param name="dto">The adjustment details including Product ID and Actual Quantity.</param>
+        /// <param name="UpdateStock">Indicates whether to update the stock quantity in the system.</param>
         /// <returns>The result of the adjustment operation, including loss/profit details.</returns>
         [HttpPost("Adjust")]
         //[Authorize(Roles = "StoreManager")] // Only Store Managers can adjust stock after inventory check
@@ -38,7 +39,7 @@ namespace Base.API.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> AdjustStock([FromBody] StockAdjustmentDto dto)
+        public async Task<IActionResult> AdjustStock([FromBody] StockAdjustmentDto dto,[FromQuery]bool UpdateStock)
         {
             if (!ModelState.IsValid)
             {
@@ -49,12 +50,13 @@ namespace Base.API.Controllers
 
             try
             {
-                var productRepo = _unitOfWork.Repository<Product>();
-                var product = await productRepo.GetByIdAsync(dto.ProductId);
+                //var productRepo = _unitOfWork.Repository<Product>();
+                //var product = await productRepo.GetByIdAsync(dto.ProductId);
+                var product = await _unitOfWork.Repository<Product>().GetEntityWithSpecAsync(new BaseSpecification<Product>(p => p.Name == dto.ProductName));
 
                 if (product == null)
                 {
-                    return NotFound(new ApiResponseDTO { Message = $"Product with ID {dto.ProductId} not found." });
+                    return NotFound(new ApiResponseDTO { Message = $"Product with Name {dto.ProductName} not found." });
                 }
 
                 int systemQuantity = product.CurrentStockQuantity;
@@ -87,33 +89,45 @@ namespace Base.API.Controllers
                     UnitSellPrice= product.SellPrice
 
                 };
-           
-                await _unitOfWork.Repository<StockTransaction>().AddAsync(adjustmentTransaction);
-
-                await productRepo.UpdateAsync(product);
-
-                var result = await _unitOfWork.CompleteAsync();
-
-                if (result <= 0)
+                if (UpdateStock)
                 {
-                    return StatusCode(500, new ApiResponseDTO { Message = "Failed to save stock adjustment." });
-                }
+                    await _unitOfWork.Repository<StockTransaction>().AddAsync(adjustmentTransaction);
 
+                    await _unitOfWork.Repository<Product>().UpdateAsync(product);
+
+                    var result = await _unitOfWork.CompleteAsync();
+
+                    if (result <= 0)
+                    {
+                        return StatusCode(500, new ApiResponseDTO { Message = "Failed to save stock adjustment." });
+                    }
+
+                    string statusMsg2 = difference > 0 ? "Surplus (Found)" : "Deficit (Missing)";
+
+                    return Ok(new
+                    {
+                        Message = $"Stock adjusted successfully. {statusMsg2}: {Math.Abs(difference)} units.",
+                        OldQuantity = systemQuantity,
+                        NewQuantity = product.CurrentStockQuantity,
+                        AdjustmentId = adjustmentTransaction.Id,
+                        FinancialImpact = impactDescription,
+                        ValueDifference = financialImpact
+                    });
+
+                }
                 string statusMsg = difference > 0 ? "Surplus (Found)" : "Deficit (Missing)";
 
                 return Ok(new
                 {
-                    Message = $"Stock adjusted successfully. {statusMsg}: {Math.Abs(difference)} units.",
-                    OldQuantity = systemQuantity,
-                    NewQuantity = product.CurrentStockQuantity,
-                    AdjustmentId = adjustmentTransaction.Id,
+                    Message = $" {statusMsg}: {Math.Abs(difference)} units.",
+                    SystemQuantity = systemQuantity,
                     FinancialImpact = impactDescription,
                     ValueDifference = financialImpact
                 });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error adjusting stock for product {ProductId}", dto.ProductId);
+                _logger.LogError(ex, "Error adjusting stock for product {ProductName}", dto.ProductName);
                 return StatusCode(500, new ApiResponseDTO { Message = "Error processing stock adjustment." });
             }
         }
