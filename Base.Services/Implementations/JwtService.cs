@@ -50,7 +50,7 @@ namespace Base.Services.Implementations
             }
             if (!int.TryParse(_config["Auth:Jwt:Minutes"], out int minutes))
             {
-                minutes = 60; // قيمة افتراضية إذا كانت الإعدادات خاطئة
+                minutes = 480; // قيمة افتراضية إذا كانت الإعدادات خاطئة
             }
             var token = new JwtSecurityToken(
                 issuer: _config["Auth:Jwt:Issuer"],

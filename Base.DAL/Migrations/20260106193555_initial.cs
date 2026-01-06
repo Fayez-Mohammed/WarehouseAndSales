@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Base.DAL.Migrations
 {
     /// <inheritdoc />
-    public partial class Initial : Migration
+    public partial class initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -71,6 +71,41 @@ namespace Base.DAL.Migrations
                         name: "FK_AspNetRoleClaims_AspNetRoles_RoleId",
                         column: x => x.RoleId,
                         principalTable: "AspNetRoles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AccountantUserProfiles",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    DateOfCreation = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    DateOfUpdate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    DateOfDeletion = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DeletedById = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AccountantUserProfiles", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AccountantUserProfiles_AspNetUsers_CreatedById",
+                        column: x => x.CreatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_AccountantUserProfiles_AspNetUsers_UpdatedById",
+                        column: x => x.UpdatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_AccountantUserProfiles_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -191,6 +226,38 @@ namespace Base.DAL.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Categories",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    DateOfCreation = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    DateOfUpdate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    DateOfDeletion = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DeletedById = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Categories", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Categories_AspNetUsers_CreatedById",
+                        column: x => x.CreatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Categories_AspNetUsers_UpdatedById",
+                        column: x => x.UpdatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "CustomerProfiles",
                 columns: table => new
                 {
@@ -270,6 +337,72 @@ namespace Base.DAL.Migrations
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Expenses",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    AccountantUserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    DateOfCreation = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
+                    UpdatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    DateOfUpdate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    DateOfDeletion = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DeletedById = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Expenses", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Expenses_AspNetUsers_AccountantUserId",
+                        column: x => x.AccountantUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Expenses_AspNetUsers_CreatedById",
+                        column: x => x.CreatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Expenses_AspNetUsers_UpdatedById",
+                        column: x => x.UpdatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Inventories",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    InventoryManagerId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    DateOfCreation = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    DateOfUpdate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    DateOfDeletion = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DeletedById = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Inventories", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Inventories_AspNetUsers_CreatedById",
+                        column: x => x.CreatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Inventories_AspNetUsers_UpdatedById",
+                        column: x => x.UpdatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -365,42 +498,6 @@ namespace Base.DAL.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Products",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
-                    SKU = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    BuyPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    SellPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    CurrentStockQuantity = table.Column<int>(type: "int", nullable: false),
-                    CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    DateOfCreation = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    DateOfUpdate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    DateOfDeletion = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    DeletedById = table.Column<string>(type: "nvarchar(max)", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Products", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Products_AspNetUsers_CreatedById",
-                        column: x => x.CreatedById,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Products_AspNetUsers_UpdatedById",
-                        column: x => x.UpdatedById,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "RefreshTokens",
                 columns: table => new
                 {
@@ -490,8 +587,8 @@ namespace Base.DAL.Migrations
                 {
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    ContactInfo = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Address = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     DateOfCreation = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
@@ -515,6 +612,12 @@ namespace Base.DAL.Migrations
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Suppliers_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -599,7 +702,8 @@ namespace Base.DAL.Migrations
                     Type = table.Column<int>(type: "int", nullable: false),
                     RecipientName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    GeneratedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    PaidAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    RemainingAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     OrderId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     DateOfCreation = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -630,6 +734,145 @@ namespace Base.DAL.Migrations
                         principalTable: "Orders",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ReturnRequests",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    OrderId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    CustomerId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    AdminComment = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    DateOfCreation = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    DateOfUpdate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    DateOfDeletion = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DeletedById = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ReturnRequests", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ReturnRequests_AspNetUsers_CreatedById",
+                        column: x => x.CreatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_ReturnRequests_AspNetUsers_CustomerId",
+                        column: x => x.CustomerId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ReturnRequests_AspNetUsers_UpdatedById",
+                        column: x => x.UpdatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_ReturnRequests_Orders_OrderId",
+                        column: x => x.OrderId,
+                        principalTable: "Orders",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Products",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
+                    SKU = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    BuyPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    SellPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    CurrentStockQuantity = table.Column<int>(type: "int", nullable: false),
+                    SupplierId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    CategoryId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    InventoryId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    DateOfCreation = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    DateOfUpdate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    DateOfDeletion = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DeletedById = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Products", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Products_AspNetUsers_CreatedById",
+                        column: x => x.CreatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Products_AspNetUsers_UpdatedById",
+                        column: x => x.UpdatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Products_Categories_CategoryId",
+                        column: x => x.CategoryId,
+                        principalTable: "Categories",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_Products_Inventories_InventoryId",
+                        column: x => x.InventoryId,
+                        principalTable: "Inventories",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Products_Suppliers_SupplierId",
+                        column: x => x.SupplierId,
+                        principalTable: "Suppliers",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "SupplierInvoices",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Type = table.Column<int>(type: "int", nullable: false),
+                    SupplierName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    PaidAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    RemainingAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    SupplierId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    DateOfCreation = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    DateOfUpdate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    DateOfDeletion = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DeletedById = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SupplierInvoices", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_SupplierInvoices_AspNetUsers_CreatedById",
+                        column: x => x.CreatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_SupplierInvoices_AspNetUsers_UpdatedById",
+                        column: x => x.UpdatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_SupplierInvoices_Suppliers_SupplierId",
+                        column: x => x.SupplierId,
+                        principalTable: "Suppliers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -679,12 +922,59 @@ namespace Base.DAL.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "ReturnItems",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ReturnRequestId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ProductId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Quantity = table.Column<int>(type: "int", nullable: false),
+                    Reason = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    DateOfCreation = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    DateOfUpdate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    DateOfDeletion = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DeletedById = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ReturnItems", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ReturnItems_AspNetUsers_CreatedById",
+                        column: x => x.CreatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_ReturnItems_AspNetUsers_UpdatedById",
+                        column: x => x.UpdatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_ReturnItems_Products_ProductId",
+                        column: x => x.ProductId,
+                        principalTable: "Products",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ReturnItems_ReturnRequests_ReturnRequestId",
+                        column: x => x.ReturnRequestId,
+                        principalTable: "ReturnRequests",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "StockTransactions",
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Type = table.Column<int>(type: "int", nullable: false),
                     Quantity = table.Column<int>(type: "int", nullable: false),
+                    UnitBuyPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    UnitSellPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    Notes = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     ProductId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     StoreManagerId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     SupplierId = table.Column<string>(type: "nvarchar(450)", nullable: true),
@@ -738,6 +1028,22 @@ namespace Base.DAL.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_AccountantUserProfiles_CreatedById",
+                table: "AccountantUserProfiles",
+                column: "CreatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AccountantUserProfiles_UpdatedById",
+                table: "AccountantUserProfiles",
+                column: "UpdatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AccountantUserProfiles_UserId",
+                table: "AccountantUserProfiles",
+                column: "UserId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
                 table: "AspNetRoleClaims",
                 column: "RoleId");
@@ -770,6 +1076,12 @@ namespace Base.DAL.Migrations
                 column: "NormalizedEmail");
 
             migrationBuilder.CreateIndex(
+                name: "IX_AspNetUsers_FullName",
+                table: "AspNetUsers",
+                column: "FullName",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "UserNameIndex",
                 table: "AspNetUsers",
                 column: "NormalizedUserName",
@@ -784,6 +1096,22 @@ namespace Base.DAL.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_BlacklistedTokens_UpdatedById",
                 table: "BlacklistedTokens",
+                column: "UpdatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Categories_CreatedById",
+                table: "Categories",
+                column: "CreatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Categories_Name",
+                table: "Categories",
+                column: "Name",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Categories_UpdatedById",
+                table: "Categories",
                 column: "UpdatedById");
 
             migrationBuilder.CreateIndex(
@@ -804,6 +1132,31 @@ namespace Base.DAL.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_EmployeeProfiles_UpdatedById",
                 table: "EmployeeProfiles",
+                column: "UpdatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Expenses_AccountantUserId",
+                table: "Expenses",
+                column: "AccountantUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Expenses_CreatedById",
+                table: "Expenses",
+                column: "CreatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Expenses_UpdatedById",
+                table: "Expenses",
+                column: "UpdatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Inventories_CreatedById",
+                table: "Inventories",
+                column: "CreatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Inventories_UpdatedById",
+                table: "Inventories",
                 column: "UpdatedById");
 
             migrationBuilder.CreateIndex(
@@ -877,9 +1230,30 @@ namespace Base.DAL.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Products_CategoryId",
+                table: "Products",
+                column: "CategoryId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Products_CreatedById",
                 table: "Products",
                 column: "CreatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Products_InventoryId",
+                table: "Products",
+                column: "InventoryId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Products_Name",
+                table: "Products",
+                column: "Name",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Products_SupplierId",
+                table: "Products",
+                column: "SupplierId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Products_UpdatedById",
@@ -900,6 +1274,46 @@ namespace Base.DAL.Migrations
                 name: "IX_RefreshTokens_UserId",
                 table: "RefreshTokens",
                 column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ReturnItems_CreatedById",
+                table: "ReturnItems",
+                column: "CreatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ReturnItems_ProductId",
+                table: "ReturnItems",
+                column: "ProductId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ReturnItems_ReturnRequestId",
+                table: "ReturnItems",
+                column: "ReturnRequestId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ReturnItems_UpdatedById",
+                table: "ReturnItems",
+                column: "UpdatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ReturnRequests_CreatedById",
+                table: "ReturnRequests",
+                column: "CreatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ReturnRequests_CustomerId",
+                table: "ReturnRequests",
+                column: "CustomerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ReturnRequests_OrderId",
+                table: "ReturnRequests",
+                column: "OrderId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ReturnRequests_UpdatedById",
+                table: "ReturnRequests",
+                column: "UpdatedById");
 
             migrationBuilder.CreateIndex(
                 name: "IX_SalesRepProfiles_CreatedById",
@@ -942,6 +1356,21 @@ namespace Base.DAL.Migrations
                 column: "UpdatedById");
 
             migrationBuilder.CreateIndex(
+                name: "IX_SupplierInvoices_CreatedById",
+                table: "SupplierInvoices",
+                column: "CreatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SupplierInvoices_SupplierId",
+                table: "SupplierInvoices",
+                column: "SupplierId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SupplierInvoices_UpdatedById",
+                table: "SupplierInvoices",
+                column: "UpdatedById");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Suppliers_CreatedById",
                 table: "Suppliers",
                 column: "CreatedById");
@@ -950,6 +1379,11 @@ namespace Base.DAL.Migrations
                 name: "IX_Suppliers_UpdatedById",
                 table: "Suppliers",
                 column: "UpdatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Suppliers_UserId",
+                table: "Suppliers",
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_SystemAdminProfile_CreatedById",
@@ -976,6 +1410,9 @@ namespace Base.DAL.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "AccountantUserProfiles");
+
+            migrationBuilder.DropTable(
                 name: "AspNetRoleClaims");
 
             migrationBuilder.DropTable(
@@ -1000,6 +1437,9 @@ namespace Base.DAL.Migrations
                 name: "EmployeeProfiles");
 
             migrationBuilder.DropTable(
+                name: "Expenses");
+
+            migrationBuilder.DropTable(
                 name: "Invoices");
 
             migrationBuilder.DropTable(
@@ -1012,10 +1452,16 @@ namespace Base.DAL.Migrations
                 name: "RefreshTokens");
 
             migrationBuilder.DropTable(
+                name: "ReturnItems");
+
+            migrationBuilder.DropTable(
                 name: "SalesRepProfiles");
 
             migrationBuilder.DropTable(
                 name: "StockTransactions");
+
+            migrationBuilder.DropTable(
+                name: "SupplierInvoices");
 
             migrationBuilder.DropTable(
                 name: "SystemAdminProfile");
@@ -1027,10 +1473,19 @@ namespace Base.DAL.Migrations
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
-                name: "Orders");
+                name: "ReturnRequests");
 
             migrationBuilder.DropTable(
                 name: "Products");
+
+            migrationBuilder.DropTable(
+                name: "Orders");
+
+            migrationBuilder.DropTable(
+                name: "Categories");
+
+            migrationBuilder.DropTable(
+                name: "Inventories");
 
             migrationBuilder.DropTable(
                 name: "Suppliers");

@@ -72,7 +72,7 @@ namespace Base.API.Controllers
                 CurrentStock = product.CurrentStockQuantity,
 
                 TotalIn = transactions
-                            .Where(t => t.Type == TransactionType.StockIn || t.Type == TransactionType.Return || (t.Type == TransactionType.Adjustment && t.Quantity > 0))
+                            .Where(t => t.Type == TransactionType.StockIn || t.Type == TransactionType.Return || (t.Type == TransactionType.Adjustment && t.Quantity > 0)|| t.Type == TransactionType.UpdatedInByEmployee)
                             .Sum(t => Math.Abs(t.Quantity)),
                 TotalInAdjusted = transactions
                             .Where(t => t.Type == TransactionType.Adjustment && t.Quantity > 0)
@@ -84,14 +84,21 @@ namespace Base.API.Controllers
                             .Where(t => t.Type == TransactionType.Return)
                             .Sum(t => t.Quantity),
                 TotalOut = transactions
-                            .Where(t => t.Type == TransactionType.StockOut || (t.Type == TransactionType.Adjustment && t.Quantity < 0))
+                            .Where(t => t.Type == TransactionType.StockOut || (t.Type == TransactionType.Adjustment && t.Quantity < 0)|| t.Type == TransactionType.UpdatedOutByEmployee)
                             .Sum(t => Math.Abs(t.Quantity)),
                 TotalOutAdjusted = transactions
                             .Where(t => t.Type == TransactionType.Adjustment && t.Quantity < 0)
                             .Sum(t => Math.Abs(t.Quantity)),
                 TotalOutSold = transactions
                             .Where(t => t.Type == TransactionType.StockOut)
+                            .Sum(t => Math.Abs(t.Quantity)),
+                TotalInUpdatedByEmployee = transactions
+                 .Where(t => t.Type == TransactionType.UpdatedInByEmployee)
+                            .Sum(t => Math.Abs(t.Quantity)),
+                TotalOutUpdatedByEmployee = transactions
+                 .Where(t => t.Type == TransactionType.UpdatedOutByEmployee)
                             .Sum(t => Math.Abs(t.Quantity))
+               
 
             };
 

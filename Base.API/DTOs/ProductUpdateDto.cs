@@ -29,16 +29,16 @@ public class ProductUpdateWithCategoryNameDto
     public string? ProductId { get; set; }
     [MaxLength(200)]
     public string? ProductName { get; set; }
-    [Range(0.1, double.MaxValue)]
-    public decimal SellPrice { get; set; }
     [Range(0, double.MaxValue)]
-    public int Quantity { get; set; }
+    public decimal? SellPrice { get; set; } = 0m;
+    [Range(0, double.MaxValue)]
+    public int? Quantity { get; set; } = 0;
     [MaxLength(200)]
     public string? SKU { get; set; }
     [MaxLength(200)]
     public string? Description { get; set; }
-    [Range(0.1, double.MaxValue)]
-    public decimal BuyPrice { get; set; }
+    //[Range(0.1, double.MaxValue)]
+    //public decimal BuyPrice { get; set; }
     [MaxLength(200)]
     public string? CategoryName { get; set; }
 }

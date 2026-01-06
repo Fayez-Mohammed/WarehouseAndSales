@@ -1,4 +1,6 @@
 ﻿using Base.DAL.Models.BaseModels;
+using Base.DAL.Models.SystemModels;
+using Base.Repo.Interfaces;
 using Base.Services.Interfaces;
 using Base.Shared.DTOs;
 using Base.Shared.Enums;
@@ -18,11 +20,13 @@ namespace Base.API.Controllers
     {
         private readonly IUserProfileService _userProfileService;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public UsersController(IUserProfileService userProfileService, UserManager<ApplicationUser> userManager)
+        public UsersController(IUserProfileService userProfileService, UserManager<ApplicationUser> userManager, IUnitOfWork unitOfWork)
         {
             _userProfileService = userProfileService;
             _userManager = userManager;
+            _unitOfWork = unitOfWork;
         }
         /// <summary>
         /// جلب جميع المستخدمين مع خيارات التصفية والصفحة
@@ -69,11 +73,26 @@ namespace Base.API.Controllers
         /// <exception cref="ArgumentNullException"></exception>
         // POST: api/users
         [HttpPost("create")]
-        public async Task<ActionResult<UserDto>> Create([FromQuery] UserTypes? userType, [FromBody] CreateUserRequest request)
+        public async Task<ActionResult<UserDto>> Create([FromQuery] UserTypes userType, [FromBody] CreateUserRequest request)
         {
-
+            //request.UserType = userType;
             if (request == null) throw new ArgumentNullException(nameof(request));
             var user = await _userProfileService.CreateAsync(request);
+            if (user == null) return NotFound();
+            if (request.UserType == UserTypes.Supplier)
+            {
+                var supplier = new Supplier
+                {
+                    Name = request.FullName,
+
+                    Address = request.Address,
+                    UserId = user.Id
+                };
+
+                await _unitOfWork.Repository<Supplier>().AddAsync(supplier);
+                var completed = await _unitOfWork.CompleteAsync();
+            }
+       
             return Ok(user);
         }
         /// <summary>

@@ -125,7 +125,7 @@ namespace Base.Services.Implementations
             var token = await _jwtService.GenerateJwtTokenAsync(user);
             var refreshToken = await _refreshTokenService.CreateRefreshTokenAsync(user.Id);
             var roles = await _userService.GetRolesAsync(user);
-            var expiry = DateTime.UtcNow.AddMinutes(int.Parse(_config["Auth:Jwt:Minutes"] ?? "60")); // Example expiry; adjust based on JWT config
+            var expiry = DateTime.UtcNow.AddMinutes(int.Parse(_config["Auth:Jwt:Minutes"] ?? "480")); // Example expiry; adjust based on JWT config
 
             return new LoginResult
             {

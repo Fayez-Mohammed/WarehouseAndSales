@@ -28,6 +28,7 @@ namespace Base.Services.Helpers
                 UserType= user.Type,
                 IsActive = user.IsActive,
                 ImagePath = user.ImagePath
+                
             };
         }
 

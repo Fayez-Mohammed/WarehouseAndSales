@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Base.Shared.DTOs
@@ -41,8 +42,11 @@ namespace Base.Shared.DTOs
         public required string Email { get; set; } = string.Empty;
         [Required]
         public required string Password { get; set; } = string.Empty;
+        
         public UserTypes UserType { get; set; } = UserTypes.Customer; // default
         public string? PhoneNumber { get; set; }
+       
+        public string? Address { get; set; }
     }
 
     // DTOs/Users/UpdateUserRequest.cs

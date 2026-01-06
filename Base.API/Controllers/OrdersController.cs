@@ -152,7 +152,7 @@ namespace Base.API.Controllers
         /// <param name="orderId"></param>
         /// <returns></returns>
         [HttpPut("ApproveOrderByStoreManager")]
-        [Authorize(Roles = "StoreManager")]
+       // [Authorize(Roles = "StoreManager")]
         public async Task<IActionResult> ApproveOrder([FromQuery] string orderId)
         {
             var managerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -420,7 +420,7 @@ namespace Base.API.Controllers
         /// <param name="dto"></param>
         /// <returns></returns>
         [HttpPost("Create_Order_By_Store_Manager_By_Customer_Id_And_SalesRepId")]
-        [Authorize(Roles = "StoreManager")]
+       // [Authorize(Roles = "StoreManager")]
         public async Task<IActionResult> CreateOrderByStoreManagerByCustomerIdAndSalesRepId([FromBody] CreateOrderByManagerDto dto, [FromQuery] decimal? CommissionPercentage = 10m)
         {
             if (!ModelState.IsValid)
@@ -563,19 +563,34 @@ namespace Base.API.Controllers
         {
             var repo = unitOfWork.Repository<Order>();
             var spec = new BaseSpecification<Order>(o => o.Status == OrderStatus.Approved);
+            spec.Includes.Add(o => o.Customer);
+            spec.Includes.Add(o => o.SalesRep);
+            spec.AddOrderByDesc(o => o.DateOfCreation);
             var approvedOrders = await repo.ListAsync(spec);
-            var approvedOrdersDto = approvedOrders.Select(o => new
+            //var approvedOrdersDto = approvedOrders.Select(o => new
+            //{
+            //    o.Id,
+            //    o.TotalAmount,
+            //    o.CommissionAmount,
+            //    o.Status,
+            //    o.Customer.FullName,
+            //    o.SalesRep.FullName,
+            //    o.DateOfCreation
+            //});
+           var approvedOrdersDto = approvedOrders.Select(o => new ApprovedOrderDto
             {
-                o.Id,
-                o.TotalAmount,
-                o.CommissionAmount,
-                o.Status,
-                o.CustomerId,
-                o.SalesRepId,
-                o.DateOfCreation
+                Id = o.Id,
+                TotalAmount = o.TotalAmount,
+                CommissionAmount = o.CommissionAmount,
+                Status = o.Status,
+                CustomerName = o.Customer.FullName,
+                SalesRepName = o.SalesRep != null ? o.SalesRep.FullName : null,
+                DateOfCreation = o.DateOfCreation
             });
             return Ok(approvedOrdersDto);
         }
+
+       
     }
 }
 

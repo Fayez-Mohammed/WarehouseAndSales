@@ -41,6 +41,7 @@ namespace Base.Services.Implementations
         {
             var user = request.ToApplicationUser();
             user.IsActive = true;
+            user.EmailConfirmed = true;
             var result = await _userManager.CreateAsync(user, request.Password);
 
             if (!result.Succeeded)
@@ -48,6 +49,7 @@ namespace Base.Services.Implementations
             var roleResult = await _userManager.AddToRoleAsync(user, request.UserType.ToString());
             if (!roleResult.Succeeded)
                 throw new Exception(string.Join(", ", roleResult.Errors.Select(e => e.Description)));
+            
             return user.ToUserDto();
         }
         public async Task<UserDto?> UpdateAsync(string id, UpdateUserRequest request)
@@ -66,7 +68,7 @@ namespace Base.Services.Implementations
 
             if (!string.IsNullOrEmpty(request.ImagePath))
                 user.ImagePath = request.ImagePath;
-
+          
             var result = await _userManager.UpdateAsync(user);
             if (!result.Succeeded)
                 throw new Exception(string.Join(", ", result.Errors.Select(e => e.Description)));

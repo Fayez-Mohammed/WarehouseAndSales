@@ -12,7 +12,9 @@ using FluentValidation;
 using Hangfire.Server;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using RepositoryProject.Specifications;
+using System.Security.Claims;
 
 namespace Base.API.Controllers;
 
@@ -44,7 +46,7 @@ public class InventoryController(IUnitOfWork unit
            // spec.Includes.Add(i => i.Products);
             spec.ApplyPaging(skip, take);
             spec.Includes.Add(i => i.Category);
-
+            spec.AddOrderBy(p => p.Name);
             var inventory = await unit
                .Repository<Product>()
                .ListAsync(spec);
@@ -326,6 +328,8 @@ public class InventoryController(IUnitOfWork unit
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> CreateListOfProducts([FromQuery] string supplierName, [FromBody] List<ProductWithCategoryNameDto> productCreateWithNameDto)
     {
+        var repoProducts = unit.Repository<Product>();
+
         //  ApplicationUser user =await userService.GetByIdAsync(SupplierId);
         var repo = unit.Repository<Supplier>();
         //var spec = new BaseSpecification<Supplier>(s => s.UserId == SupplierId);
@@ -368,24 +372,57 @@ s => s.Name.Contains(supplierName)
 
             };
             totalPrice += (productDto.BuyPrice * productDto.Quantity);
-            await unit.Repository<Product>().AddAsync(product);
 
-            // Create Stock Transaction Log
-            var stockLog = new StockTransaction
+            var specProduct =new BaseSpecification<Product>(p=>p.Name == productDto.ProductName);
+            var OldProduct= await repoProducts.GetEntityWithSpecAsync(specProduct);
+            if (OldProduct != null && OldProduct.IsDeleted == true)
             {
-                ProductId = product.Id,
-                SupplierId = supplier.Id,
-                Type = TransactionType.StockIn,
-                Quantity = product.CurrentStockQuantity,
-                DateOfCreation = DateTime.UtcNow,
-                UnitBuyPrice = product.BuyPrice,
-                UnitSellPrice = product.SellPrice,
-                Notes = "Updated via bulk product addition"
+                OldProduct.IsDeleted = false;
+                OldProduct.SKU = productDto.SKU ?? OldProduct.SKU;
+                OldProduct.SellPrice = productDto.SalePrice;
+                OldProduct.BuyPrice = productDto.BuyPrice;
+                OldProduct.Description = productDto.Description ?? OldProduct.Description;
+                OldProduct.CurrentStockQuantity = productDto.Quantity;
+                OldProduct.CategoryId = category.Id ?? OldProduct.CategoryId;
+              await  repoProducts.UpdateAsync(OldProduct);
+                var stockLog = new StockTransaction
+                {
+                    ProductId = OldProduct.Id,
+                    SupplierId = supplier.Id,
+                    Type = TransactionType.StockIn,
+                    Quantity = OldProduct.CurrentStockQuantity,
+                    DateOfCreation = DateTime.UtcNow,
+                    UnitBuyPrice = OldProduct.BuyPrice,
+                    UnitSellPrice = OldProduct.SellPrice,
+                    Notes = "Updated via bulk product addition [The Product Was Deleted and restored]"
 
-                // REMOVED: TransactionDate = DateTime.UtcNow 
-                // Your AppDbContext automatically fills 'DateOfCreation' which serves as the date.
-            };
-            await unit.Repository<StockTransaction>().AddAsync(stockLog);
+                    // REMOVED: TransactionDate = DateTime.UtcNow 
+                    // Your AppDbContext automatically fills 'DateOfCreation' which serves as the date.
+                };
+                await unit.Repository<StockTransaction>().AddAsync(stockLog);
+            }
+            else
+            {
+                await unit.Repository<Product>().AddAsync(product);
+
+                // Create Stock Transaction Log
+                var stockLog = new StockTransaction
+                {
+                    ProductId = product.Id,
+                    SupplierId = supplier.Id,
+                    Type = TransactionType.StockIn,
+                    Quantity = product.CurrentStockQuantity,
+                    DateOfCreation = DateTime.UtcNow,
+                    UnitBuyPrice = product.BuyPrice,
+                    UnitSellPrice = product.SellPrice,
+                    Notes = "Updated via bulk product addition"
+
+                    // REMOVED: TransactionDate = DateTime.UtcNow 
+                    // Your AppDbContext automatically fills 'DateOfCreation' which serves as the date.
+                };
+                await unit.Repository<StockTransaction>().AddAsync(stockLog);
+            }
+
 
         }
         try
@@ -473,12 +510,12 @@ s => s.Name.Contains(supplierName)
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> UpdateProduct([FromBody] ProductUpdateWithCategoryNameDto productDto)
     {
-        var validate = await productUpdateWithCategoryNameValidator.ValidateAsync(productDto);
+        //var validate = await productUpdateWithCategoryNameValidator.ValidateAsync(productDto);
 
-        if (!validate.IsValid)
-        {
-            return BadRequest(new ApiResponseDTO { Message = "Invalid Input parameters" });
-        }
+        //if (!validate.IsValid)
+        //{
+        //    return BadRequest(new ApiResponseDTO { Message = "Invalid Input parameters" });
+        //}
 
         try
         {
@@ -486,17 +523,52 @@ s => s.Name.Contains(supplierName)
             var specCategory = new BaseSpecification<Category>(c => c.Name == productDto.CategoryName);
             var category = await repoCategory.GetEntityWithSpecAsync(specCategory);
             var product = await unit.Repository<Product>().GetByIdAsync(productDto.ProductId);
-            if (string.IsNullOrEmpty(product.Name))
-                return NotFound();
+          
+            if(!productDto.ProductName.IsNullOrEmpty())
             product.Name = productDto.ProductName ?? product.Name;
+            if(!productDto.SKU.IsNullOrEmpty())
             product.SKU = productDto.SKU ?? product.SKU;
-            if (productDto.SellPrice != 0)
-                product.SellPrice = productDto.SellPrice;
-            if (productDto.BuyPrice != 0)
-                product.BuyPrice = productDto.BuyPrice;
+            if (productDto.SellPrice != 0m && productDto.SellPrice.HasValue)
+                product.SellPrice = productDto.SellPrice ?? product.SellPrice;
+            //if (productDto.BuyPrice != 0)
+            //    product.BuyPrice = productDto.BuyPrice;
+             if(!productDto.Description.IsNullOrEmpty())
             product.Description = productDto.Description ?? product.Description;
+             if(category!=null)
             product.CategoryId = category.Id ?? product.CategoryId;
+            if (product.CurrentStockQuantity != productDto.Quantity && productDto.Quantity != 0 && productDto.Quantity.HasValue)
+            {
+                TransactionType transactionType;
+                int quantityDifference = productDto.Quantity.Value - product.CurrentStockQuantity;
+                if (quantityDifference > 0)
+                {
+                    transactionType = TransactionType.UpdatedInByEmployee;
+                }
+                else
+                {
+                    transactionType = TransactionType.UpdatedOutByEmployee;
+                    //   quantityDifference = Math.Abs(quantityDifference);
+                }
+                // Create Stock Transaction Log
+                var stockLog = new StockTransaction
+                {
+                    ProductId = product.Id,
+                  //  SupplierId = product.SupplierId,
+                    Type = transactionType,
+                    Quantity = quantityDifference,
+                    DateOfCreation = DateTime.UtcNow,
+                    UnitBuyPrice = product.BuyPrice,
+                    UnitSellPrice = product.SellPrice,
+                    Notes = $"Updated By Employee with Id {User.FindFirstValue(ClaimTypes.NameIdentifier)}"
+                    // REMOVED: TransactionDate = DateTime.UtcNow 
+                    // Your AppDbContext automatically fills 'DateOfCreation' which serves as the date.
+                };
+                await unit.Repository<StockTransaction>().AddAsync(stockLog);
 
+                product.CurrentStockQuantity = productDto.Quantity.Value;
+
+            }
+          await  unit.Repository<Product>().UpdateAsync(product);
             var result = await unit.CompleteAsync();
 
             if (result == 0)

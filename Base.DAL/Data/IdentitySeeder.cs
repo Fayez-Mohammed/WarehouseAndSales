@@ -21,8 +21,8 @@ namespace Base.DAL.Seeding
             }
 
             // 🧑‍💼 بيانات الأدمن الافتراضي
-            string adminEmail = "islam7lmy@gmail.com";
-            string adminPassword = "Admin@123";
+            string adminEmail = "SystemAdmin@gmail.com";
+            string adminPassword = "asdf1234";
 
             // ✅ تحقق لو الأدمن مش موجود
             var adminUser = await userManager.FindByEmailAsync(adminEmail);
@@ -30,7 +30,7 @@ namespace Base.DAL.Seeding
             {
                 adminUser = new ApplicationUser
                 {
-                    FullName = "Islam helmy",
+                    FullName = "System Admin",
                     Type = UserTypes.SystemAdmin,
                     UserName = adminEmail,
                     Email = adminEmail,

@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Base.DAL.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251231155641_UserFullNameUniqe")]
-    partial class UserFullNameUniqe
+    [Migration("20260106193555_initial")]
+    partial class initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -336,6 +336,9 @@ namespace Base.DAL.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CreatedById");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
 
                     b.HasIndex("UpdatedById");
 
@@ -746,7 +749,6 @@ namespace Base.DAL.Migrations
                         .HasColumnType("nvarchar(150)");
 
                     b.Property<string>("SKU")
-                        .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
@@ -766,6 +768,9 @@ namespace Base.DAL.Migrations
                     b.HasIndex("CreatedById");
 
                     b.HasIndex("InventoryId");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
 
                     b.HasIndex("SupplierId");
 

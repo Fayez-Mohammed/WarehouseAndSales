@@ -29,11 +29,11 @@ public class ProductUpdateWithCategoryNameDtoValidation : AbstractValidator<Prod
 
         RuleFor(x => x.Quantity)
             .GreaterThan(0);
-        RuleFor(x => x.BuyPrice)
-            .GreaterThan(0);
+        //RuleFor(x => x.BuyPrice)
+        //    .GreaterThan(0);
         RuleFor(x => x.ProductName)
             .NotEmpty();
-        RuleFor(x => x.SKU)
-            .NotEmpty();
+        //RuleFor(x => x.SKU)
+        //    .NotEmpty();
     }
 }

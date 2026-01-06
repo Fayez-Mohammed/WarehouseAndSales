@@ -4,7 +4,9 @@
     {
         StockIn = 1,        // Purchase from Supplier
         StockOut = 2,       // Sale to Customer
-        Return = 3   ,       // Returned Item
-        Adjustment = 4      // Stock Adjustment
+        Return = 3,       // Returned Item
+        Adjustment = 4,      // Stock Adjustment
+        UpdatedInByEmployee = 5, // Updated Manually by Employee
+        UpdatedOutByEmployee = 6 // Updated Manually by Employee
     }
 }

@@ -33,7 +33,7 @@ namespace Base.API.Controllers
             // Use BaseSpecification to get all categories (no filter)
             // You can add .ApplyPaging(skip, take) here if you want pagination later
             var spec = new BaseSpecification<Category>(c => true && c.IsDeleted == false);
-
+            spec.AddOrderBy(c => c.Name); 
             var categories = await repo.ListAsync(spec);
 
             var result = categories.Select(c => new
@@ -80,6 +80,10 @@ namespace Base.API.Controllers
       
         public async Task<IActionResult> CreateCategory([FromBody] CreateCategoryDto dto)
         {
+            //var repoCat = _unitOfWork.Repository<Category>();
+            //var specCat = new BaseSpecification<Category>(c => c.Name == dto.Name);
+            //var OldCategory = repoCat.GetEntityWithSpecAsync(specCat);
+            //if(OldCategory !=null&&OldCategory.)
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 

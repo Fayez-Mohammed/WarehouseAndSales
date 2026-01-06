@@ -84,7 +84,7 @@ namespace Base.API.Controllers
         {
             var spec = new BaseSpecification<Expense>();
             spec.Includes.Add(e => e.AccountantUser);
-        
+        spec.AddOrderByDesc(e => e.DateOfCreation);
 
             var expenses = await _unitOfWork.Repository<Expense>().ListAsync(spec);
 
@@ -113,8 +113,8 @@ namespace Base.API.Controllers
 
             var spec = new BaseSpecification<Expense>(e => e.AccountantUserId == userId);
             spec.Includes.Add(e => e.AccountantUser);
-          //  spec.OrderByDescending(e => e.CreatedAt);
-
+            //  spec.OrderByDescending(e => e.CreatedAt);
+            spec.AddOrderByDesc(e => e.DateOfCreation);
             var expenses = await _unitOfWork.Repository<Expense>().ListAsync(spec);
 
             var result = expenses.Select(e => new ExpenseResponseDto
@@ -142,8 +142,8 @@ namespace Base.API.Controllers
         {
             var spec = new BaseSpecification<Expense>(e => e.AccountantUserId == accountantUserId);
             spec.Includes.Add(e => e.AccountantUser);
-      //      spec.OrderByDescending(e => e.CreatedAt);
-
+            //      spec.OrderByDescending(e => e.CreatedAt);
+            spec.AddOrderByDesc(e => e.DateOfCreation);
             var expenses = await _unitOfWork.Repository<Expense>().ListAsync(spec);
 
             var result = expenses.Select(e => new ExpenseResponseDto

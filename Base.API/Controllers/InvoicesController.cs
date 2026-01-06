@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using RepositoryProject.Specifications;
 using System.Threading.Tasks;
 
@@ -65,6 +66,7 @@ namespace Base.API.Controllers
             var repo = unitOfWork.Repository<Invoice>();
             if (repo == null) return NotFound();
             var spec = new BaseSpecification<Invoice>(i => i.Type == InvoiceType.CustomerInvoice);
+            spec.AddOrderByDesc(i => i.DateOfCreation);
             var invoices = repo.ListAsync(spec).Result;
             if (invoices == null || !invoices.Any()) return NotFound();
             var invoiceDTOs = invoices.Select(i => new InvoiceDTO
@@ -366,7 +368,7 @@ namespace Base.API.Controllers
 
 
                 var spec = new BaseSpecification<Invoice>(i =>
-                    (string.IsNullOrEmpty(search) || i.RecipientName.Contains(search) || i.OrderId.Contains(search)) &&
+                    (string.IsNullOrEmpty(search) || i.RecipientName.Contains(search)||i.Id==search || i.OrderId.Contains(search)) &&
                     (!invoiceType.HasValue || i.Type == invoiceType.Value) &&
                     (string.IsNullOrEmpty(orderId) || i.OrderId == orderId) &&
 
@@ -389,8 +391,8 @@ namespace Base.API.Controllers
                     (!toDate.HasValue || i.DateOfCreation <= toDate.Value)
                 );
                 spec.Includes.Add(i => i.Order);
-            
-            
+          spec.AddOrderByDesc(i => i.DateOfCreation);
+
             var totalItems = await repo.CountAsync(spec);
             spec.ApplyPaging((page - 1) * pageSize, pageSize);
             var invoices = await repo.ListAsync(spec);

@@ -36,6 +36,7 @@ namespace Base.API.Controllers
             var spec = new BaseSpecification<Order>(o => o.Id == orderId);
             //spec.Includes.Add(o => o.OrderItems);
             spec.AllIncludes.Add(Q=> Q.Include(o => o.OrderItems).ThenInclude(oi => oi.Product));
+          // spec.AddOrderBy(o=>o.OrderItems.Select(oi=> oi.Product.Name));
             var order = repo.GetEntityWithSpecAsync(spec).Result;
             if (order == null)
             {
