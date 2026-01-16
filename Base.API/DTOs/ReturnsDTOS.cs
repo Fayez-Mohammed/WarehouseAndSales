@@ -6,7 +6,7 @@ namespace Base.API.DTOs
      //   [Required]
       //  public string CustomerId { get; set; }
         [Required]
-        public string OrderId { get; set; }
+        public int OrderCode { get; set; }
 
         [Required]
         [MinLength(1, ErrorMessage = "Must return at least one item.")]

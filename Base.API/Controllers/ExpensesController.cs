@@ -67,7 +67,7 @@ namespace Base.API.Controllers
                 Amount = expense.Amount,
                 Description = expense.Description,
                 CreatedAt = expense.DateOfCreation,
-                AccountantUserId = accountantUserId,
+                //AccountantUserId = accountantUserId,
                 AccountantName = accountant?.UserName ?? "غير معروف"
             };
 
@@ -91,12 +91,13 @@ namespace Base.API.Controllers
             var result = expenses.Select(e => new ExpenseResponseDto
             {
                 Id = e.Id,
+                Code=e.Code,
                 Amount = e.Amount,
                 Description = e.Description,
                 //CreatedAt = e.CreatedAt,
                 CreatedAt = e.DateOfCreation,
-                AccountantUserId = e.AccountantUserId,
-                AccountantName = e.AccountantUser?.UserName
+                //AccountantUserId = e.AccountantUserId,
+                AccountantName = e.AccountantUser?.FullName
             });
 
             return Ok(result);
@@ -120,12 +121,13 @@ namespace Base.API.Controllers
             var result = expenses.Select(e => new ExpenseResponseDto
             {
                 Id = e.Id,
+                Code=e.Code,
                 Amount = e.Amount,
                 Description = e.Description,
                // CreatedAt = e.CreatedAt,
                 CreatedAt = e.DateOfCreation,
-                AccountantUserId = e.AccountantUserId,
-                AccountantName = e.AccountantUser?.UserName
+                //AccountantUserId = e.AccountantUserId,
+                AccountantName = e.AccountantUser?.FullName
             });
 
             return Ok(result);
@@ -140,7 +142,7 @@ namespace Base.API.Controllers
        // [Authorize(Roles = "Admin,Manager")]
         public async Task<IActionResult> GetExpensesByAccountant([FromQuery]string accountantUserId)
         {
-            var spec = new BaseSpecification<Expense>(e => e.AccountantUserId == accountantUserId);
+            var spec = new BaseSpecification<Expense>(e => e.AccountantUserId == accountantUserId||e.Code.ToString()==accountantUserId);
             spec.Includes.Add(e => e.AccountantUser);
             //      spec.OrderByDescending(e => e.CreatedAt);
             spec.AddOrderByDesc(e => e.DateOfCreation);
@@ -149,11 +151,12 @@ namespace Base.API.Controllers
             var result = expenses.Select(e => new ExpenseResponseDto
             {
                 Id = e.Id,
+                Code=e.Code,
                 Amount = e.Amount,
                 Description = e.Description,
                 CreatedAt = e.DateOfCreation,
-                AccountantUserId = e.AccountantUserId,
-                AccountantName = e.AccountantUser?.UserName
+                //AccountantUserId = e.AccountantUserId,
+                AccountantName = e.AccountantUser?.FullName
             });
 
             return Ok(result);

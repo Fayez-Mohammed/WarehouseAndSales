@@ -7,6 +7,7 @@
         Return = 3,       // Returned Item
         Adjustment = 4,      // Stock Adjustment
         UpdatedInByEmployee = 5, // Updated Manually by Employee
-        UpdatedOutByEmployee = 6 // Updated Manually by Employee
+        UpdatedOutByEmployee = 6, // Updated Manually by Employee
+        ReturnToSupplier = 7      // Returned to Supplier
     }
 }

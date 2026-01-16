@@ -3,8 +3,11 @@ using Base.DAL.Models.BaseModels;
 using Base.DAL.Models.SystemModels;
 using Base.DAL.Models.SystemModels.Enums;
 using Base.Repo.Interfaces;
+using Base.Services.Interfaces;
+using Base.Shared.DTOs;
 using Base.Shared.Enums;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -21,11 +24,12 @@ namespace Base.API.Controllers
     {
         private readonly IUnitOfWork unitOfWork;
         private readonly UserManager<ApplicationUser> userManager;
-
-        public OrdersController(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager)
+                private readonly IUserProfileService _userProfileService;
+        public OrdersController(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager, IUserProfileService userProfileService)
         {
             this.unitOfWork = unitOfWork;
             this.userManager = userManager;
+            _userProfileService = userProfileService;
         }
         ///// <summary>
         ///// Gets all approved orders for the logged-in customer.   Not Used Currently
@@ -155,7 +159,7 @@ namespace Base.API.Controllers
        // [Authorize(Roles = "StoreManager")]
         public async Task<IActionResult> ApproveOrder([FromQuery] string orderId)
         {
-            var managerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var managerId = User.FindFirstValue(ClaimTypes.NameIdentifier);//"5cacb2b3-be3c-4076-b367-ddd52b904489";
 
             // 1. Get Order with Includes
             var spec = new BaseSpecification<Order>(o => o.Id == orderId);
@@ -238,9 +242,18 @@ namespace Base.API.Controllers
             await unitOfWork.Repository<Order>().UpdateAsync(order);
 
             // 6. Commit all changes
-            var result = await unitOfWork.CompleteAsync();
+            //  var result = await unitOfWork.CompleteAsync();
+            try
+            {
+                var result = await unitOfWork.CompleteAsync();
+                if (result <= 0) return StatusCode(500, "Failed to approve order");
+            }
+            catch (DbUpdateException ex)
+            {
+                return BadRequest(ex.InnerException?.Message ?? ex.Message);
+            }
 
-            if (result <= 0) return StatusCode(500, "Failed to approve order");
+            
 
             return Ok(new { Message = "Order Approved and Stock Deducted" });
         }
@@ -421,7 +434,7 @@ namespace Base.API.Controllers
         /// <returns></returns>
         [HttpPost("Create_Order_By_Store_Manager_By_Customer_Id_And_SalesRepId")]
        // [Authorize(Roles = "StoreManager")]
-        public async Task<IActionResult> CreateOrderByStoreManagerByCustomerIdAndSalesRepId([FromBody] CreateOrderByManagerDto dto, [FromQuery] decimal? CommissionPercentage = 10m)
+        public async Task<IActionResult> CreateOrderByStoreManagerByCustomerIdAndSalesRepId([FromBody] CreateOrderByManagerDto dto, [FromQuery] decimal? CommissionPercentage = 1.75m)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
@@ -438,8 +451,22 @@ namespace Base.API.Controllers
 
             var count = await query.CountAsync();
 
+            //if (count == 0)
+            //    return BadRequest("Customer not found");
             if (count == 0)
-                return BadRequest("Customer not found");
+                {
+                CreateUserRequest request = new CreateUserRequest
+                {
+                    FullName = dto.CustomerName,
+                    UserType = UserTypes.Customer,
+                   PhoneNumber=dto.PhoneNumber
+
+                 
+                };
+                request.Password = "asdf1234";
+                var user = await _userProfileService.CreateAsync(request);
+                if (user == null) return NotFound();
+            }
 
             if (count > 1)
                 return BadRequest("Multiple customers found with the same name");
@@ -495,7 +522,7 @@ namespace Base.API.Controllers
                     Status = OrderStatus.Confirmed, // Directly Confirmed
                     OrderItems = orderItems,      // EF Core will insert these automatically
                     SalesRepId = Salesrep.Id,   // Optional, can be null
-                    CommissionAmount = ((CommissionPercentage ?? 10m) / 100m) * totalAmount
+                    CommissionAmount = ((CommissionPercentage ?? 1.75m) / 100m) * totalAmount
                 };
 
                 // 4. Save to Database
@@ -543,6 +570,7 @@ namespace Base.API.Controllers
             var confirmedOrdersDto = confirmedOrders.Select(o => new
             {
                 o.Id,
+                o.Code,
                 o.TotalAmount,
                 o.CommissionAmount,
                 o.Status,
@@ -580,7 +608,8 @@ namespace Base.API.Controllers
            var approvedOrdersDto = approvedOrders.Select(o => new ApprovedOrderDto
             {
                 Id = o.Id,
-                TotalAmount = o.TotalAmount,
+                Code = o.Code,
+               TotalAmount = o.TotalAmount,
                 CommissionAmount = o.CommissionAmount,
                 Status = o.Status,
                 CustomerName = o.Customer.FullName,
@@ -590,7 +619,49 @@ namespace Base.API.Controllers
             return Ok(approvedOrdersDto);
         }
 
-       
+        /// <summary>
+        /// (Autocomplete) البحث عن العملاء بالاسم 
+        /// </summary>
+        /// <param name="term">جزء من الاسم</param>
+        /// <returns>قائمة مختصرة (Id, Name, Phone)</returns>
+        [HttpGet("customers/autocomplete")]
+        public async Task<IActionResult> GetCustomerSuggestions([FromQuery] string term)
+        {
+            if (string.IsNullOrWhiteSpace(term))
+                return Ok(new List<object>());
+
+            try
+            {
+                // نستخدم IQueryable عشان البحث يتم في الداتابيز وميحملش كل الداتا في الميموري
+                var query = userManager.Users.AsNoTracking();
+
+                // 1. الفلترة:
+                // - النوع لازم يكون عميل (UserTypes.Customer) أو حسب ما انت مسجله في الـ Enum
+                // - الاسم أو رقم الهاتف يحتوي على كلمة البحث
+                query = query.Where(u =>
+                    u.Type == UserTypes.Customer && // تأكد أن هذا يطابق الـ Enum عندك
+                    (u.FullName.Contains(term))
+                );
+
+                // 2. الترتيب والتحجيم: هات أول 10 نتايج بس
+                var customers = await query
+                    .OrderBy(u => u.FullName)
+                    .Take(10)
+                    .Select(u => new
+                    {
+                        u.UserNumber,
+                        u.FullName
+                    })
+                    .ToListAsync();
+
+                return Ok(customers);
+            }
+            catch (Exception ex)
+            {
+                // _logger.LogError(ex, "Error searching customers");
+                return StatusCode(500, new { Message = "Error searching customers" });
+            }
+        }
     }
 }
 

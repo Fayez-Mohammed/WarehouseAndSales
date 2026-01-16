@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using RepositoryProject.Specifications;
 using System.Threading.Tasks;
@@ -66,6 +67,7 @@ namespace Base.API.Controllers
             var repo = unitOfWork.Repository<Invoice>();
             if (repo == null) return NotFound();
             var spec = new BaseSpecification<Invoice>(i => i.Type == InvoiceType.CustomerInvoice);
+            spec.Includes.Add(i => i.Order);
             spec.AddOrderByDesc(i => i.DateOfCreation);
             var invoices = repo.ListAsync(spec).Result;
             if (invoices == null || !invoices.Any()) return NotFound();
@@ -78,7 +80,8 @@ namespace Base.API.Controllers
                 PaidAmount = i.PaidAmount,
                 RemainingAmount = i.RemainingAmount,
                 GeneratedDate = i.DateOfCreation,
-                OrderId = i.OrderId
+                OrderId = i.OrderId,
+                OrderCode = i.Order.Code
             }).ToList();
             return Ok(invoiceDTOs);
         }
@@ -313,6 +316,7 @@ namespace Base.API.Controllers
            [FromQuery] string? search,
            [FromQuery] InvoiceType? invoiceType,
            [FromQuery] string? orderId,
+          // [FromQuery] int orderCode,
            [FromQuery] string? recipientName,
            [FromQuery] string? recipientId,
            [FromQuery] bool? lastInvoice,
@@ -322,12 +326,12 @@ namespace Base.API.Controllers
 
            [FromQuery] int page = 1,
            [FromQuery] int pageSize = 20){
-            if (invoiceType.HasValue && InvoiceType.SupplierInvoice == invoiceType.Value)
+            if (invoiceType.HasValue && (InvoiceType.SupplierInvoice == invoiceType.Value||InvoiceType.SupplierReturnInvoice == invoiceType.Value))
             {
                 var repoS = unitOfWork.Repository<SupplierInvoice>();
                 var specS = new BaseSpecification<SupplierInvoice>(i =>
-                    (string.IsNullOrEmpty(search) || i.SupplierName.Contains(search)) &&
-                    (!invoiceType.HasValue || i.Type == InvoiceType.SupplierInvoice) &&
+                    (string.IsNullOrEmpty(search) || i.SupplierName.Contains(search) || i.Id == search || i.Code.ToString() == search) &&
+                    (!invoiceType.HasValue || i.Type == InvoiceType.SupplierInvoice||i.Type == InvoiceType.SupplierReturnInvoice) &&
                     (string.IsNullOrEmpty(recipientName) || i.SupplierName.Contains(recipientName)) &&
                     (!fromDate.HasValue || i.DateOfCreation >= fromDate.Value) &&
                     (!toDate.HasValue || i.DateOfCreation <= toDate.Value)
@@ -338,6 +342,7 @@ namespace Base.API.Controllers
                 var invoiceDTOsS = invoicesS.Select(i => new InvoiceDTO
                 {
                     Id = i.Id,
+                    Code = i.Code,
                     Type = i.Type,
                     RecipientName = i.SupplierName,
                     Amount = i.Amount,
@@ -345,7 +350,8 @@ namespace Base.API.Controllers
                     RemainingAmount = i.RemainingAmount,
                     GeneratedDate = i.DateOfCreation,
 
-                }).ToList();
+                }).OrderByDescending(i=>i.GeneratedDate).ToList();
+               
                 if (lastInvoice.HasValue && lastInvoice.Value)
                 {
                     invoiceDTOsS = invoiceDTOsS
@@ -368,30 +374,33 @@ namespace Base.API.Controllers
 
 
                 var spec = new BaseSpecification<Invoice>(i =>
-                    (string.IsNullOrEmpty(search) || i.RecipientName.Contains(search)||i.Id==search || i.OrderId.Contains(search)) &&
+                    (string.IsNullOrEmpty(search) || i.RecipientName.Contains(search)||i.Id==search||i.Code.ToString()==search ) &&
                     (!invoiceType.HasValue || i.Type == invoiceType.Value) &&
-                    (string.IsNullOrEmpty(orderId) || i.OrderId == orderId) &&
+                    (string.IsNullOrEmpty(orderId) || i.OrderId == orderId||i.Order.Code.ToString()==orderId) &&
 
                     (string.IsNullOrEmpty(recipientName) || i.RecipientName.Contains(recipientName)) &&
                      (
                          string.IsNullOrEmpty(recipientId) ||
 
                              (
-                                 (i.Type == InvoiceType.CustomerInvoice || i.Type == InvoiceType.ReturnInvoice) &&
-                                 i.Order.CustomerId == recipientId
+                                 (i.Type == InvoiceType.CustomerInvoice || i.Type == InvoiceType.ReturnInvoice) &&(
+                                 i.Order.CustomerId == recipientId||i.Order.Customer.UserNumber.ToString()==recipientId)
                                                   )
                              ||
                               (
-                                 i.Type == InvoiceType.CommissionInvoice &&
-                                 i.Order.SalesRepId == recipientId
+                                 i.Type == InvoiceType.CommissionInvoice &&(
+                                 i.Order.SalesRepId == recipientId||i.Order.SalesRep.UserNumber.ToString()==recipientId)
                              )
                          )
                                           &&
                     (!fromDate.HasValue || i.DateOfCreation >= fromDate.Value) &&
                     (!toDate.HasValue || i.DateOfCreation <= toDate.Value)
                 );
-                spec.Includes.Add(i => i.Order);
-          spec.AddOrderByDesc(i => i.DateOfCreation);
+           //     spec.Includes.Add(i => i.Order);
+          //  spec.AllIncludes.Add(que)
+          spec.AllIncludes.Add(query=> query.Include(i=>i.Order).ThenInclude(n=>n.Customer));
+          spec.AllIncludes.Add(query=> query.Include(i=>i.Order).ThenInclude(n=>n.SalesRep));
+            spec.AddOrderByDesc(i => i.DateOfCreation);
 
             var totalItems = await repo.CountAsync(spec);
             spec.ApplyPaging((page - 1) * pageSize, pageSize);
@@ -402,14 +411,17 @@ namespace Base.API.Controllers
             var invoiceDTOs = invoices.Select(i => new InvoiceDTO
             {
                 Id = i.Id,
+                Code = i.Code,
                 Type = i.Type,
                 RecipientName = i.RecipientName,
                 Amount = i.Amount,
                 PaidAmount = i.PaidAmount,
                 RemainingAmount = i.RemainingAmount,
                 GeneratedDate = i.DateOfCreation,
-                OrderId = i.OrderId
-            }).ToList();
+                OrderId = i.OrderId,
+                OrderCode= i.Order.Code
+            }).OrderByDescending(i => i.GeneratedDate).ToList();
+
             if (lastInvoice.HasValue && lastInvoice.Value)
             {
                 invoiceDTOs = invoiceDTOs
@@ -435,29 +447,34 @@ namespace Base.API.Controllers
         [HttpPut("PayedAmountFromCustomerByOrderId")]
         public async Task<IActionResult> TakeOrderPriceFromCustomer([FromQuery] CustomerOrSalesRep customerOrSalesRep, [FromQuery] string orderId, [FromQuery] decimal PayiedAmount)
         {
-            if(customerOrSalesRep == CustomerOrSalesRep.SalesRep)
+            if (customerOrSalesRep == CustomerOrSalesRep.SalesRep)
             {
                 return await PayCommissionToSalesRep(customerOrSalesRep, orderId, PayiedAmount);
             }
-            var repo = unitOfWork.Repository<Invoice>();
-            if (repo == null) return NotFound();
-            var spec = new BaseSpecification<Invoice>(i => i.OrderId == orderId && i.Type == InvoiceType.CustomerInvoice);
-            var invoice = repo.ListAsync(spec).Result.FirstOrDefault();
-            if (invoice == null) return NotFound();
-        
-            invoice.PaidAmount += PayiedAmount;
-            invoice.RemainingAmount = invoice.RemainingAmount - PayiedAmount;
-            if(invoice.RemainingAmount < 0)
+            else if (customerOrSalesRep == CustomerOrSalesRep.Customer)
             {
-                return BadRequest("Paid amount exceeds remaining amount.");
+                var repo = unitOfWork.Repository<Invoice>();
+                if (repo == null) return NotFound();
+                var spec = new BaseSpecification<Invoice>(i => (i.OrderId == orderId || i.Code.ToString() == orderId) && i.Type == InvoiceType.CustomerInvoice);
+                var invoice = repo.ListAsync(spec).Result.FirstOrDefault();
+                if (invoice == null) return NotFound();
+
+                invoice.PaidAmount += PayiedAmount;
+                invoice.RemainingAmount = invoice.RemainingAmount - PayiedAmount;
+                if (invoice.RemainingAmount < 0)
+                {
+                    return BadRequest("Paid amount exceeds remaining amount.");
+                }
+                await repo.UpdateAsync(invoice);
+                await unitOfWork.CompleteAsync();
+                spec.Includes.Add(i => i.Order);
+                var customer = await userManager.FindByIdAsync(invoice.Order.CustomerId);
+                if (customer == null) return NotFound();
+
+                return Ok(new { invoice.PaidAmount, invoice.RemainingAmount, CustomerName = customer.FullName });
             }
-            await repo.UpdateAsync(invoice);
-            await unitOfWork.CompleteAsync();
-            spec.Includes.Add(i => i.Order);
-            var customer = await userManager.FindByIdAsync(invoice.Order.CustomerId);
-            if (customer == null) return NotFound();
-            
-            return Ok(new { invoice.PaidAmount, invoice.RemainingAmount, CustomerName = customer.FullName });
+            else
+                return BadRequest("اختار هتدفع ل المندوب ولا عميل هيدفعلك الاول");
         }
         /// <summary>
         /// جلب المبلغ المتبقي والمبلغ المدفوع لطلب عميل معين بواسطة معرف الطلب
@@ -492,29 +509,34 @@ namespace Base.API.Controllers
         [HttpPut("PayCommissionToSalesRepByOrderId")]
         public async Task<IActionResult> PayCommissionToSalesRep([FromQuery] CustomerOrSalesRep customerOrSalesRep,[FromQuery] string orderId, [FromQuery] decimal PayiedAmount)
         {
-            if(customerOrSalesRep == CustomerOrSalesRep.Customer)
+            if (customerOrSalesRep == CustomerOrSalesRep.Customer)
             {
                 return await TakeOrderPriceFromCustomer(customerOrSalesRep, orderId, PayiedAmount);
             }
-            var repo = unitOfWork.Repository<Invoice>();
-            if (repo == null) return NotFound();
-            var spec = new BaseSpecification<Invoice>(i => i.OrderId == orderId && i.Type == InvoiceType.CommissionInvoice);
-            var invoice = repo.ListAsync(spec).Result.FirstOrDefault();
-            if (invoice == null) return NotFound();
-            invoice.PaidAmount += PayiedAmount;
-            invoice.RemainingAmount = invoice.RemainingAmount - PayiedAmount;
-
-            if (invoice.RemainingAmount < 0)
+            else if (customerOrSalesRep == CustomerOrSalesRep.SalesRep)
             {
-                return BadRequest("Paid amount exceeds remaining amount.");
+                var repo = unitOfWork.Repository<Invoice>();
+                if (repo == null) return NotFound();
+                var spec = new BaseSpecification<Invoice>(i => (i.OrderId == orderId || i.Code.ToString() == orderId) && i.Type == InvoiceType.CommissionInvoice);
+                var invoice = repo.ListAsync(spec).Result.FirstOrDefault();
+                if (invoice == null) return NotFound();
+                invoice.PaidAmount += PayiedAmount;
+                invoice.RemainingAmount = invoice.RemainingAmount - PayiedAmount;
+
+                if (invoice.RemainingAmount < 0)
+                {
+                    return BadRequest("Paid amount exceeds remaining amount.");
+                }
+                await repo.UpdateAsync(invoice);
+                await unitOfWork.CompleteAsync();
+                spec.Includes.Add(i => i.Order);
+                var salesRep = await userManager.FindByIdAsync(invoice.Order.SalesRepId);
+                if (salesRep == null) return NotFound();
+                return Ok(new { invoice.Amount, invoice.PaidAmount, invoice.RemainingAmount, SalesRepName = salesRep.FullName });
             }
-            await repo.UpdateAsync(invoice);
-            await unitOfWork.CompleteAsync();
-            spec.Includes.Add(i => i.Order);
-            var salesRep = await userManager.FindByIdAsync(invoice.Order.SalesRepId);
-            if (salesRep == null) return NotFound();
-            return Ok(new { invoice.Amount,invoice.PaidAmount, invoice.RemainingAmount, SalesRepName = salesRep.FullName });
-        }
+            else
+                return BadRequest("اختار هتدفع ل المندوب ولا عميل هيدفعلك الاول");
+            }
 
 
         /// <summary>
@@ -549,7 +571,7 @@ namespace Base.API.Controllers
         {
             var repo = unitOfWork.Repository<SupplierInvoice>();
             if (repo == null) return NotFound();
-            var spec = new BaseSpecification<SupplierInvoice>(i => i.Id == SupplierInvoiceId && i.Type == InvoiceType.SupplierInvoice);
+            var spec = new BaseSpecification<SupplierInvoice>(i => (i.Id == SupplierInvoiceId ||i.Code.ToString()==SupplierInvoiceId)&& i.Type == InvoiceType.SupplierInvoice);
             var invoice = repo.ListAsync(spec).Result.FirstOrDefault();
             if (invoice == null) return NotFound();
             invoice.PaidAmount += PayiedAmount;
@@ -559,11 +581,13 @@ namespace Base.API.Controllers
             {
                 return BadRequest("Paid amount exceeds remaining amount.");
             }
-            await repo.UpdateAsync(invoice);
-            await unitOfWork.CompleteAsync();
             spec.Includes.Add(i => i.Supplier);
             var Supplier = await userManager.FindByIdAsync(invoice.Supplier.UserId);
             if (Supplier == null) return NotFound();
+            await repo.UpdateAsync(invoice);
+            await unitOfWork.CompleteAsync();
+         
+          
             return Ok(new { invoice.Amount, invoice.PaidAmount, invoice.RemainingAmount, Supplier = Supplier.FullName });
         }
        /// <summary>
@@ -588,6 +612,7 @@ namespace Base.API.Controllers
             var invoiceDTOs = invoices.Select(i => new SupplierInvoiceDTO
             {
                 Id = i.Id,
+                Code = i.Code,
                 Type = i.Type,
                 SupplierName = i.SupplierName,
                 Amount = i.Amount,
@@ -621,6 +646,7 @@ namespace Base.API.Controllers
             var dto = new SupplierInvoiceDTO
             {
                 Id = lastInvoice.Id,
+                Code = lastInvoice.Code,
                 Type = lastInvoice.Type,
                 SupplierName = lastInvoice.SupplierName,
                 Amount = lastInvoice.Amount,
@@ -634,8 +660,10 @@ namespace Base.API.Controllers
     }
     public enum CustomerOrSalesRep
     {
+        None,
         Customer,
         SalesRep
+       
     }
     internal class PagedResult<T>
     {

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Base.DAL.Migrations
 {
     /// <inheritdoc />
-    public partial class initial : Migration
+    public partial class inital : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -30,6 +30,7 @@ namespace Base.DAL.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    UserNumber = table.Column<int>(type: "int", nullable: false),
                     FullName = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
                     Type = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
@@ -81,6 +82,8 @@ namespace Base.DAL.Migrations
                 {
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Code = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     DateOfCreation = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
@@ -202,6 +205,8 @@ namespace Base.DAL.Migrations
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Token = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ExpiryDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Code = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     DateOfCreation = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
@@ -232,6 +237,8 @@ namespace Base.DAL.Migrations
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    Code = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     DateOfCreation = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
@@ -267,6 +274,8 @@ namespace Base.DAL.Migrations
                     CreditLimit = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     LoyaltyPoints = table.Column<int>(type: "int", nullable: false),
                     Id = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Code = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     DateOfCreation = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
@@ -308,6 +317,8 @@ namespace Base.DAL.Migrations
                     HireDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Salary = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     Id = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Code = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     DateOfCreation = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
@@ -347,6 +358,8 @@ namespace Base.DAL.Migrations
                     Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
                     AccountantUserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    Code = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     DateOfCreation = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
                     UpdatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
@@ -382,6 +395,8 @@ namespace Base.DAL.Migrations
                 {
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     InventoryManagerId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Code = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     DateOfCreation = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
@@ -416,6 +431,8 @@ namespace Base.DAL.Migrations
                     ApprovedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CustomerId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     SalesRepId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    Code = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     DateOfCreation = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
@@ -468,6 +485,8 @@ namespace Base.DAL.Migrations
                     Attempts = table.Column<int>(type: "int", nullable: false),
                     ResendCount = table.Column<int>(type: "int", nullable: false),
                     LastResendAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Code = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     DateOfCreation = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
@@ -513,6 +532,8 @@ namespace Base.DAL.Migrations
                     ReplacedByTokenHash = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     ReasonRevoked = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false),
+                    Code = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     DateOfCreation = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
@@ -550,6 +571,8 @@ namespace Base.DAL.Migrations
                     Region = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     TotalSalesYTD = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     Id = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Code = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     DateOfCreation = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
@@ -589,6 +612,8 @@ namespace Base.DAL.Migrations
                     Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Address = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Code = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     DateOfCreation = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
@@ -626,6 +651,8 @@ namespace Base.DAL.Migrations
                 {
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Id = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Code = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     DateOfCreation = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
@@ -663,6 +690,8 @@ namespace Base.DAL.Migrations
                 {
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Id = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Code = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     DateOfCreation = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
@@ -705,6 +734,8 @@ namespace Base.DAL.Migrations
                     PaidAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     RemainingAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     OrderId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Code = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     DateOfCreation = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
@@ -745,6 +776,8 @@ namespace Base.DAL.Migrations
                     CustomerId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
                     AdminComment = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Code = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     DateOfCreation = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
@@ -794,6 +827,8 @@ namespace Base.DAL.Migrations
                     SupplierId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     CategoryId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     InventoryId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    Code = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     DateOfCreation = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
@@ -846,6 +881,8 @@ namespace Base.DAL.Migrations
                     PaidAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     RemainingAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     SupplierId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Code = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     DateOfCreation = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
@@ -884,6 +921,8 @@ namespace Base.DAL.Migrations
                     UnitPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     OrderId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     ProductId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Code = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     DateOfCreation = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
@@ -930,6 +969,8 @@ namespace Base.DAL.Migrations
                     ProductId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Quantity = table.Column<int>(type: "int", nullable: false),
                     Reason = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Code = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     DateOfCreation = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
@@ -979,6 +1020,8 @@ namespace Base.DAL.Migrations
                     StoreManagerId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     SupplierId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     OrderId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    Code = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     DateOfCreation = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),

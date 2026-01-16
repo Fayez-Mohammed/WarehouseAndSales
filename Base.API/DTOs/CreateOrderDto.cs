@@ -21,6 +21,7 @@ namespace Base.API.DTOs
         [Required]
         
         public required string CustomerName { get; set; }
+        public string? PhoneNumber { get; set; }
       //  public decimal? CommissionPercentage { get; set; } = 10m;
 
         [Required]

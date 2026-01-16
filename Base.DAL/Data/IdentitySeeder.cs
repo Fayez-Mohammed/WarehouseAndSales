@@ -21,8 +21,8 @@ namespace Base.DAL.Seeding
             }
 
             // 🧑‍💼 بيانات الأدمن الافتراضي
-            string adminEmail = "SystemAdmin@gmail.com";
-            string adminPassword = "asdf1234";
+            string adminEmail = "admin@gmail.com";
+            string adminPassword = "0000";    
 
             // ✅ تحقق لو الأدمن مش موجود
             var adminUser = await userManager.FindByEmailAsync(adminEmail);

@@ -1,10 +1,13 @@
 ﻿using Base.API.DTOs;
+using Base.DAL.Models.BaseModels;
 using Base.DAL.Models.SystemModels;
 using Base.DAL.Models.SystemModels.Enums;
 using Base.Repo.Interfaces;
+using Base.Shared.Enums;
 using Base.Shared.Responses;
 using Hangfire.Server;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RepositoryProject.Specifications;
@@ -23,17 +26,19 @@ namespace Base.API.Controllers
     public class ReturnsController : ControllerBase
     {
         private readonly IUnitOfWork _unitOfWork;
-
-        public ReturnsController(IUnitOfWork unitOfWork)
+        private readonly UserManager<ApplicationUser> userManager;
+        public ReturnsController(IUnitOfWork unitOfWork,UserManager<ApplicationUser> userManager)
         {
             _unitOfWork = unitOfWork;
+            this.userManager = userManager;
+
         }
 
         [HttpGet("OrderItemsByOrderId")]
-        public IActionResult OrderItemsByOrderId([FromQuery] string orderId)
+        public IActionResult OrderItemsByOrderId([FromQuery] int orderCode)
         {
             var repo = _unitOfWork.Repository<Order>();
-            var spec = new BaseSpecification<Order>(o => o.Id == orderId);
+            var spec = new BaseSpecification<Order>(o => o.Code == orderCode);
             //spec.Includes.Add(o => o.OrderItems);
             spec.AllIncludes.Add(Q=> Q.Include(o => o.OrderItems).ThenInclude(oi => oi.Product));
           // spec.AddOrderBy(o=>o.OrderItems.Select(oi=> oi.Product.Name));
@@ -52,7 +57,8 @@ namespace Base.API.Controllers
          var itemsDto= order.OrderItems.Select(oi => new OrderItemDto
             {
                 ProductId = oi.ProductId,
-                ProductName = oi.Product.Name,
+                Code = oi.Product.Code,
+             ProductName = oi.Product.Name,
                 Quantity = oi.Quantity,
                 UnitPrice = oi.UnitPrice,
                 CustomerId= order.CustomerId
@@ -74,7 +80,7 @@ namespace Base.API.Controllers
 
             // 1. Validate Order ownership & status
             // We need to fetch order items to verify quantities
-            var orderSpec = new BaseSpecification<Order>(o => o.Id == dto.OrderId);
+            var orderSpec = new BaseSpecification<Order>(o => o.Code == dto.OrderCode);
             orderSpec.AllIncludes.Add(Q => Q.Include(o => o.OrderItems).ThenInclude(oi => oi.Product));
 
             var order = await _unitOfWork.Repository<Order>().GetEntityWithSpecAsync(orderSpec);
@@ -110,7 +116,7 @@ namespace Base.API.Controllers
             // 3. Create Request
             var returnRequest = new ReturnRequest
             {
-                OrderId = dto.OrderId,
+                OrderId = order.Id,
                 CustomerId = order.CustomerId,
                 Status = ReturnStatus.Pending,
                 ReturnItems = returnItems
@@ -142,12 +148,14 @@ namespace Base.API.Controllers
             var response = requests.Select(r => new
             {
                 r.Id,
+                r.Code,
                 r.OrderId,
                 CustomerName = r.Customer.FullName,
                 r.Status,
                 Items = r.ReturnItems.Select(ri => new
                 {
                     ri.ProductId,
+                    ri.Code,
                     ri.Quantity,
                     ri.Reason
                 })
@@ -228,5 +236,101 @@ namespace Base.API.Controllers
 
             return Ok(new { Message = "Return approved and items restocked." });
         }
+
+
+        [HttpPost("returntosupplier")]
+        public async Task<IActionResult> ReturnToSupplier([FromBody] ReturnToSupplierRequestDto dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            var query2 = userManager.Users
+.Where(u => u.FullName.Contains(dto.SupplierName) && u.Type == UserTypes.Supplier);
+
+            var count2 = await query2.CountAsync();
+
+            if (count2 == 0)
+                return BadRequest("Supplier not found");
+
+            if (count2 > 1)
+                return BadRequest("Multiple Suppliers found with the same name");
+
+            var supplier = await query2.FirstAsync();
+            if (supplier == null || !await userManager.IsInRoleAsync(supplier, "Supplier"))
+                return BadRequest("Invalid Supplier Name.");
+       
+      
+           
+            decimal totalReturnAmount = 0;
+            var productRepo = _unitOfWork.Repository<Product>();
+            var stockTransactionRepo = _unitOfWork.Repository<StockTransaction>();
+
+  
+
+            foreach (var item in dto.Items)
+            {
+               
+                var spec = new BaseSpecification<Product>(p => p.Name == item.ProductName && !p.IsDeleted);
+                var product = await productRepo.GetEntityWithSpecAsync(spec);
+
+                if (product == null)
+                    return BadRequest($"Product '{item.ProductName}' not found.");
+
+               
+                if (product.CurrentStockQuantity < item.Quantity)
+                {
+                    return BadRequest($"Insufficient stock for '{product.Name}'. Current: {product.CurrentStockQuantity}, Return Requested: {item.Quantity}");
+                }
+
+               
+                product.CurrentStockQuantity -= item.Quantity;
+                await productRepo.UpdateAsync(product);
+
+                
+                var transaction = new StockTransaction
+                {
+                    ProductId = product.Id,
+                    SupplierId = supplier.Id,
+                    StoreManagerId = User.FindFirstValue(ClaimTypes.NameIdentifier), 
+                    Type = TransactionType.ReturnToSupplier, 
+                    Quantity = -item.Quantity,
+                    UnitBuyPrice = product.BuyPrice,
+                    UnitSellPrice = product.SellPrice,
+                    Notes = $"Return to Supplier: {item.Reason}",
+                    DateOfCreation = DateTime.UtcNow
+                };
+                await stockTransactionRepo.AddAsync(transaction);
+
+                
+                totalReturnAmount += (product.BuyPrice * item.Quantity);
+            }
+
+            var supplierRepo = _unitOfWork.Repository<Supplier>();
+            var specSupplier = new BaseSpecification<Supplier>(s => s.UserId == supplier.Id);
+            var supplierEntity = await supplierRepo.GetEntityWithSpecAsync(specSupplier);
+            var returnInvoice = new SupplierInvoice
+            {
+                SupplierId = supplierEntity.Id,
+                SupplierName = supplierEntity.Name,
+                Type = InvoiceType.SupplierReturnInvoice, 
+                Amount = totalReturnAmount, 
+                RemainingAmount = totalReturnAmount, 
+                PaidAmount = 0,
+                DateOfCreation = DateTime.UtcNow
+            };
+
+            await _unitOfWork.Repository<SupplierInvoice>().AddAsync(returnInvoice);
+
+            // 7. Save All Changes (Atomic Transaction)
+            var result = await _unitOfWork.CompleteAsync();
+
+            if (result <= 0) return StatusCode(500, "Failed to process return.");
+
+            return Ok(new
+            {
+                Message = "Return processed successfully",
+                TotalValueRefunded = totalReturnAmount,
+                NewInvoiceCode = returnInvoice.Code
+            });
+        }
     }
 }
+

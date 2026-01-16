@@ -1,13 +1,14 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Base.DAL.Contexts;
+using Base.DAL.Models.BaseModels;
 using Base.Repo.Interfaces;
 using Base.Repo.Specifications;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Base.DAL.Contexts;
-using Base.DAL.Models.BaseModels;
 
 namespace Base.Repo.Implementations
 {
@@ -38,9 +39,28 @@ namespace Base.Repo.Implementations
             return entities;
         }
 
+        //public Task UpdateAsync(T entity)
+        //{
+        //    _dbSet.Update(entity);
+        //    return Task.CompletedTask;
+        //}
         public Task UpdateAsync(T entity)
         {
-            _dbSet.Update(entity);
+            _dbSet.Attach(entity);
+
+            var entry = _context.Entry(entity);
+            entry.State = EntityState.Modified;
+
+            // 🚫 امنع تحديث الأعمدة اللي Generated من الداتابيز
+            foreach (var property in entry.Properties)
+            {
+                if (property.Metadata.ValueGenerated == ValueGenerated.OnAdd ||
+                    property.Metadata.ValueGenerated == ValueGenerated.OnAddOrUpdate)
+                {
+                    property.IsModified = false;
+                }
+            }
+
             return Task.CompletedTask;
         }
 

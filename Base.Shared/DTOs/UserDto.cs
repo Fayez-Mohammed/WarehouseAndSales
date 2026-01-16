@@ -13,6 +13,7 @@ namespace Base.Shared.DTOs
     public class UserDto
     {
         public string? Id { get; set; } = string.Empty;
+        public int UserNumber { get; set; }
         public string FullName { get; set; } = string.Empty;
         public string UserName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
@@ -38,10 +39,10 @@ namespace Base.Shared.DTOs
     {
         [Required]
         public required string FullName { get; set; } = string.Empty;
-        [Required]
-        public required string Email { get; set; } = string.Empty;
-        [Required]
-        public required string Password { get; set; } = string.Empty;
+      //  [Required]
+        public  string? Email { get; set; } 
+        //[Required]
+        public  string? Password { get; set; }
         
         public UserTypes UserType { get; set; } = UserTypes.Customer; // default
         public string? PhoneNumber { get; set; }

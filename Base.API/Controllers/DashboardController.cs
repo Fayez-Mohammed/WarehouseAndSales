@@ -71,8 +71,8 @@ namespace Base.API.Controllers
             // =========================================================
             // 2. Pending Orders Count
             // =========================================================
-            var pendingSpec = new BaseSpecification<Order>(o => o.Status == OrderStatus.Confirmed);
-            response.PendingOrdersCount = await _unitOfWork.Repository<Order>().CountAsync(pendingSpec);
+            //var pendingSpec = new BaseSpecification<Order>(o => o.Status == OrderStatus.Confirmed);
+            //response.PendingOrdersCount = await _unitOfWork.Repository<Order>().CountAsync(pendingSpec);
             // =========================================================
             // 2.1. Approved Orders Count
             // =========================================================
@@ -95,6 +95,7 @@ namespace Base.API.Controllers
             {
                 ProductId = p.Id,
                 ProductName = p.Name,
+                ProductCode=p.Code,
                 SKU = p.SKU,
                 CurrentQuantity = p.CurrentStockQuantity
             }).ToList();

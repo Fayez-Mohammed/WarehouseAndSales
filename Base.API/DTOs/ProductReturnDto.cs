@@ -7,6 +7,7 @@ public class ProductReturnDto
     [Required]
     [MaxLength(200)]
     public string? ProductId { get; set; }
+    public int Code { get; set; }
     [MaxLength(200)]
     public string? ProductName { get; set; }
     [Required]

@@ -6,7 +6,7 @@ namespace Base.API.DTOs
     {
         public decimal TotalSalesToday { get; set; }
         public decimal TotalProfitToday { get; set; }
-        public int PendingOrdersCount { get; set; }
+       // public int PendingOrdersCount { get; set; }
         public int ApprovedOrdersCountToday { get; set; }
         public List<LowStockProductDto> LowStockProducts { get; set; }
     }
@@ -17,5 +17,6 @@ namespace Base.API.DTOs
         public string ProductName { get; set; }
         public int CurrentQuantity { get; set; }
         public string SKU { get; set; }
+        public int ProductCode { get; internal set; }
     }
 }

@@ -66,7 +66,7 @@ namespace Base.Services.Implementations
         public async Task<LoginResult> LoginUserAsync(LoginDTO model)
         {
             if (model == null) throw new ArgumentNullException(nameof(model));
-
+            
             var user = await _userService.GetByEmailAsync(model.Email);
             if (user == null || !await _userService.CheckPasswordAsync(user, model.Password))
             {

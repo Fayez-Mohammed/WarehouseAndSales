@@ -59,6 +59,7 @@ public class InventoryController(IUnitOfWork unit
                .Select(x => new ProductReturnDto
                {
                    ProductId = x.Id,
+                   Code=x.Code,
                    ProductName = x.Name,
                    SalePrice = x.SellPrice,
                    BuyPrice = x.BuyPrice,
@@ -110,6 +111,7 @@ public class InventoryController(IUnitOfWork unit
             var response = product.Select(p => new ProductReturnDto()
             {
                 ProductId = p.Id,
+                Code = p.Code,
                 ProductName = p.Name,
                 SalePrice = p.SellPrice,
                 BuyPrice = p.BuyPrice,
@@ -335,8 +337,8 @@ public class InventoryController(IUnitOfWork unit
         //var spec = new BaseSpecification<Supplier>(s => s.UserId == SupplierId);
         //var supplier = await repo.GetEntityWithSpecAsync(spec);
         var spec = new BaseSpecification<Supplier>(
-s => s.Name.Contains(supplierName)
-);
+               s => s.Name.Contains(supplierName)
+                                                  );
 
         var suppliers = await repo.ListAsync(spec);
 
@@ -373,36 +375,36 @@ s => s.Name.Contains(supplierName)
             };
             totalPrice += (productDto.BuyPrice * productDto.Quantity);
 
-            var specProduct =new BaseSpecification<Product>(p=>p.Name == productDto.ProductName);
-            var OldProduct= await repoProducts.GetEntityWithSpecAsync(specProduct);
-            if (OldProduct != null && OldProduct.IsDeleted == true)
-            {
-                OldProduct.IsDeleted = false;
-                OldProduct.SKU = productDto.SKU ?? OldProduct.SKU;
-                OldProduct.SellPrice = productDto.SalePrice;
-                OldProduct.BuyPrice = productDto.BuyPrice;
-                OldProduct.Description = productDto.Description ?? OldProduct.Description;
-                OldProduct.CurrentStockQuantity = productDto.Quantity;
-                OldProduct.CategoryId = category.Id ?? OldProduct.CategoryId;
-              await  repoProducts.UpdateAsync(OldProduct);
-                var stockLog = new StockTransaction
-                {
-                    ProductId = OldProduct.Id,
-                    SupplierId = supplier.Id,
-                    Type = TransactionType.StockIn,
-                    Quantity = OldProduct.CurrentStockQuantity,
-                    DateOfCreation = DateTime.UtcNow,
-                    UnitBuyPrice = OldProduct.BuyPrice,
-                    UnitSellPrice = OldProduct.SellPrice,
-                    Notes = "Updated via bulk product addition [The Product Was Deleted and restored]"
+           // var specProduct =new BaseSpecification<Product>(p=>p.Name == productDto.ProductName);
+            //var OldProduct= await repoProducts.GetEntityWithSpecAsync(specProduct);
+            //if (OldProduct != null && OldProduct.IsDeleted == true)
+            //{
+            //    OldProduct.IsDeleted = false;
+            //    OldProduct.SKU = productDto.SKU ?? OldProduct.SKU;
+            //    OldProduct.SellPrice = productDto.SalePrice;
+            //    OldProduct.BuyPrice = productDto.BuyPrice;
+            //    OldProduct.Description = productDto.Description ?? OldProduct.Description;
+            //    OldProduct.CurrentStockQuantity = productDto.Quantity;
+            //    OldProduct.CategoryId = category.Id ?? OldProduct.CategoryId;
+            //  await  repoProducts.UpdateAsync(OldProduct);
+            //    var stockLog = new StockTransaction
+            //    {
+            //        ProductId = OldProduct.Id,
+            //        SupplierId = supplier.Id,
+            //        Type = TransactionType.StockIn,
+            //        Quantity = OldProduct.CurrentStockQuantity,
+            //        DateOfCreation = DateTime.UtcNow,
+            //        UnitBuyPrice = OldProduct.BuyPrice,
+            //        UnitSellPrice = OldProduct.SellPrice,
+            //        Notes = "Updated via bulk product addition [The Product Was Deleted and restored]"
 
-                    // REMOVED: TransactionDate = DateTime.UtcNow 
-                    // Your AppDbContext automatically fills 'DateOfCreation' which serves as the date.
-                };
-                await unit.Repository<StockTransaction>().AddAsync(stockLog);
-            }
-            else
-            {
+            //        // REMOVED: TransactionDate = DateTime.UtcNow 
+            //        // Your AppDbContext automatically fills 'DateOfCreation' which serves as the date.
+            //    };
+            //    await unit.Repository<StockTransaction>().AddAsync(stockLog);
+            //}
+            //else
+            //{
                 await unit.Repository<Product>().AddAsync(product);
 
                 // Create Stock Transaction Log
@@ -421,7 +423,7 @@ s => s.Name.Contains(supplierName)
                     // Your AppDbContext automatically fills 'DateOfCreation' which serves as the date.
                 };
                 await unit.Repository<StockTransaction>().AddAsync(stockLog);
-            }
+           // }
 
 
         }
@@ -440,6 +442,7 @@ s => s.Name.Contains(supplierName)
                 DateOfCreation = DateTime.UtcNow
             };
             await unit.Repository<SupplierInvoice>().AddAsync(supplierInvoice);
+
             var result = await unit.CompleteAsync();
             if (result == 0)
                 return BadRequest(new ApiResponseDTO { Message = "Error occured while adding products" });
@@ -528,7 +531,7 @@ s => s.Name.Contains(supplierName)
             product.Name = productDto.ProductName ?? product.Name;
             if(!productDto.SKU.IsNullOrEmpty())
             product.SKU = productDto.SKU ?? product.SKU;
-            if (productDto.SellPrice != 0m && productDto.SellPrice.HasValue)
+            if (productDto.SellPrice > 0m && productDto.SellPrice.HasValue)
                 product.SellPrice = productDto.SellPrice ?? product.SellPrice;
             //if (productDto.BuyPrice != 0)
             //    product.BuyPrice = productDto.BuyPrice;
@@ -536,7 +539,7 @@ s => s.Name.Contains(supplierName)
             product.Description = productDto.Description ?? product.Description;
              if(category!=null)
             product.CategoryId = category.Id ?? product.CategoryId;
-            if (product.CurrentStockQuantity != productDto.Quantity && productDto.Quantity != 0 && productDto.Quantity.HasValue)
+            if (product.CurrentStockQuantity != productDto.Quantity && productDto.Quantity > 0 && productDto.Quantity.HasValue)
             {
                 TransactionType transactionType;
                 int quantityDifference = productDto.Quantity.Value - product.CurrentStockQuantity;
@@ -578,7 +581,7 @@ s => s.Name.Contains(supplierName)
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new ApiResponseDTO { Message = "Error while updating product" });
+            return StatusCode(500, new ApiResponseDTO { Message = "Error while updating product : " + ex.Message });
         }
     }
     /// <summary>
@@ -600,9 +603,13 @@ s => s.Name.Contains(supplierName)
 
             if (String.IsNullOrEmpty(product.Name))
                 return NotFound();
-
+            if(product.CurrentStockQuantity>0)
+                return BadRequest(new ApiResponseDTO { Message = "Cannot delete product with available stock." });
             product.IsDeleted = true;
-
+            product.Name= product.Name+"_Deleted_"+product.Code;
+            product.DateOfDeletion = DateTime.UtcNow;
+            product.DeletedById = User.FindFirstValue(ClaimTypes.NameIdentifier);
+           await unit.Repository<Product>().UpdateAsync(product);
             var result = await unit.CompleteAsync();
 
             if (result == 0)
@@ -693,83 +700,84 @@ s => s.Name.Contains(supplierName)
     //}
 
 
-    /// <summary>
-    /// تحديث كمية المخزون لمنتج معين (زيادة الكمية)
-    /// </summary>
-    /// <param name="productName"></param>
-    /// <param name="quantity"></param>
-    /// <param name="supplierName"></param>
-    /// <returns></returns>
-    [HttpPost("products/stock/in")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UpdateInventoryQuantity([FromQuery] string productName, [FromQuery] int quantity, [FromQuery] string supplierName)
-    {
-        var repo = unit.Repository<Supplier>();
-        var spec = new BaseSpecification<Supplier>(s => s.Name.Contains(supplierName));
-        spec.Includes.Add(i => i.User);
-        spec.Criteria = s => s.User.Type == UserTypes.Supplier;
-        var supplier = await repo.GetEntityWithSpecAsync(spec);
-        decimal totalPrice = 0;
-        if (string.IsNullOrEmpty(productName))
-            return BadRequest(new ApiResponseDTO { Message = "Invalid Product Name" });
+    ///// <summary>
+    ///// تحديث كمية المخزون لمنتج معين (زيادة الكمية)
+    ///// </summary>
+    ///// <param name="productName"></param>
+    ///// <param name="quantity"></param>
+    ///// <param name="supplierName"></param>
+    ///// <returns></returns>
+    //[HttpPost("products/stock/in")]
+    //[ProducesResponseType(StatusCodes.Status204NoContent)]
+    //[ProducesResponseType(StatusCodes.Status400BadRequest)]
+    //[ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    //[ProducesResponseType(StatusCodes.Status404NotFound)]
+    //public async Task<IActionResult> UpdateInventoryQuantity([FromQuery] string productName, [FromQuery] int quantity, [FromQuery] string supplierName)
+    //{
+    //    var repo = unit.Repository<Supplier>();
+    //    var spec = new BaseSpecification<Supplier>(s => s.Name.Contains(supplierName));
+    //    spec.Includes.Add(i => i.User);
+    //    spec.Criteria = s => s.User.Type == UserTypes.Supplier;
+    //    var supplier = await repo.GetEntityWithSpecAsync(spec);
+    //    decimal totalPrice = 0;
+    //    if (string.IsNullOrEmpty(productName))
+    //        return BadRequest(new ApiResponseDTO { Message = "Invalid Product Name" });
 
-        if (quantity <= 0)
-            return BadRequest(new ApiResponseDTO { Message = "Invalid Quantity" });
+    //    if (quantity <= 0)
+    //        return BadRequest(new ApiResponseDTO { Message = "Invalid Quantity" });
 
-        try
-        {
-            var product = await unit.Repository<Product>().GetEntityWithSpecAsync(new BaseSpecification<Product>(p => p.Name == productName));
+    //    try
+    //    {
+    //        var product = await unit.Repository<Product>().GetEntityWithSpecAsync(new BaseSpecification<Product>(p => p.Name == productName));
 
-            if (product == null)
-                return NotFound();
+    //        if (product == null)
+    //            return NotFound();
 
-            product.SupplierId = supplier.Id;
-            product.CurrentStockQuantity += quantity;
+    //        product.SupplierId = supplier.Id;
+    //        product.CurrentStockQuantity += quantity;
 
-            var StockTransaction = new StockTransaction()
-            {
-                ProductId = product.Id,
-                SupplierId = supplier.User.Id,
-                Quantity = quantity,
-                Type = DAL.Models.SystemModels.Enums.TransactionType.StockIn,
-                DateOfCreation = DateTime.UtcNow,
-                UnitBuyPrice = product.BuyPrice,
-                UnitSellPrice = product.SellPrice,
-                Notes = "Updated via single product stock in"
-            };
-            totalPrice += (product.BuyPrice * quantity);
-            await unit.Repository<StockTransaction>().AddAsync(StockTransaction);
+    //        var StockTransaction = new StockTransaction()
+    //        {
+    //            ProductId = product.Id,
+    //            SupplierId = supplier.User.Id,
+    //            Quantity = quantity,
+    //            Type = DAL.Models.SystemModels.Enums.TransactionType.StockIn,
+    //            DateOfCreation = DateTime.UtcNow,
+    //            UnitBuyPrice = product.BuyPrice,
+    //            UnitSellPrice = product.SellPrice,
+    //            Notes = "Updated via single product stock in"
+    //        };
+    //        totalPrice += (product.BuyPrice * quantity);
+    //        await unit.Repository<StockTransaction>().AddAsync(StockTransaction);
 
 
-            // 3. Generate Supplier Invoice
-            var supplierInvoice = new SupplierInvoice
-            {
-                SupplierId = supplier.Id,
-                Type = InvoiceType.SupplierInvoice,
-                SupplierName = supplier.Name,
-                Amount = totalPrice,
-                RemainingAmount = totalPrice,
-                DateOfCreation = DateTime.UtcNow
-            };
-            await unit.Repository<SupplierInvoice>().AddAsync(supplierInvoice);
-            var result = await unit.CompleteAsync();
+    //        // 3. Generate Supplier Invoice
+    //        var supplierInvoice = new SupplierInvoice
+    //        {
+    //            SupplierId = supplier.Id,
+    //            Type = InvoiceType.SupplierInvoice,
+    //            SupplierName = supplier.Name,
+    //            Amount = totalPrice,
+    //            RemainingAmount = totalPrice,
+    //            DateOfCreation = DateTime.UtcNow
+    //        };
+    //        await unit.Repository<SupplierInvoice>().AddAsync(supplierInvoice);
+    //        var result = await unit.CompleteAsync();
 
-            if (result == 0)
+    //        if (result == 0)
 
-                return BadRequest(new ApiResponseDTO { Message = "Error occured while updating product" });
+    //            return BadRequest(new ApiResponseDTO { Message = "Error occured while updating product" });
 
-            return Ok(result);
-            // return NoContent();
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new ApiResponseDTO { Message = "Error while updating inventory quantity" });
-        }
+    //        return Ok(result);
+    //        // return NoContent();
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        return StatusCode(500, new ApiResponseDTO { Message = "Error while updating inventory quantity" });
+    //    }
 
-    }
+    //}
+   
     /// <summary>
     /// تحديث كمية المخزون لمجموعة من المنتجات (زيادة الكمية)
     /// </summary>
@@ -846,4 +854,57 @@ s => s.Name.Contains(supplierName)
             return StatusCode(500, new ApiResponseDTO { Message = "Error while updating inventory quantity" });
         }
     }
+
+    /// <summary>
+    /// (Autocomplete) إكمال تلقائي للبحث: يرجع قائمة مصغرة بالأسماء المقترحة
+    /// </summary>
+    [HttpGet("autocomplete")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetProductSuggestions([FromQuery] string term)
+    {
+        // لو مفيش كلمة بحث، نرجع قائمة فاضية
+        if (string.IsNullOrWhiteSpace(term))
+            return Ok(new List<object>());
+
+        try
+        {
+            var repo = unit.Repository<Product>();
+
+            // 1. المواصفات: البحث عن الاسم يحتوي على الكلمة + غير محذوف
+            // استخدام Contains بيخلي البحث مرن (لو كتب "موبايل" يطلع "سامسونج موبايل")
+            var spec = new BaseSpecification<Product>(p =>
+                p.Name.Contains(term) && !p.IsDeleted);
+
+            // 2. الترتيب: أبجدياً عشان الشكل يكون منظم
+            spec.AddOrderBy(p => p.Name);
+
+            // 3. التحجيم (Paging): أهم خطوة! هات أول 10 نتايج بس عشان الـ Dropdown ميهنجش
+            spec.ApplyPaging(0, 10);
+
+            // تنفيذ الاستعلام
+            var products = await repo.ListAsync(spec);
+
+            // 4. اختيار البيانات (Projection): رجع بس اللي الـ Frontend محتاجه (الاسم والـ ID)
+            var suggestions = products.Select(p => new
+            {
+                p.Code,
+                p.Name,
+                // ممكن تزود السعر لو عايز تعرضه جنب الاسم
+                // Price = p.SellPrice 
+            });
+
+            return Ok(suggestions);
+        }
+        catch (Exception ex)
+        {
+            // _logger.LogError(ex, "Error getting suggestions"); // لو عندك Logger
+            return StatusCode(500, new { Message = "Error retrieving suggestions" });
+        }
+    }
+
 }
+
+
+
+
+

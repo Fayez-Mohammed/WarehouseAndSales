@@ -27,6 +27,7 @@
 using Microsoft.AspNetCore.Identity;
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Base.DAL.Models.BaseModels
 {
@@ -38,6 +39,9 @@ namespace Base.DAL.Models.BaseModels
         // =======================================================
         // 1. Creation Audit
         // =======================================================
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int Code { get; private set; }
+
         public string? CreatedById { get; set; }
 
         // I recommend uncommenting this. It allows you to easily display 

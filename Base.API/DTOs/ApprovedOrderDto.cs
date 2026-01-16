@@ -5,6 +5,7 @@ namespace Base.API.DTOs
     internal class ApprovedOrderDto
     {
         public string Id { get; set; }
+        public int Code { get; set; }
         public decimal TotalAmount { get; set; }
         public decimal CommissionAmount { get; set; }
         public OrderStatus Status { get; set; }

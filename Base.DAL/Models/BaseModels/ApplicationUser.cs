@@ -4,6 +4,7 @@ using Base.Shared.Enums;
 using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,6 +13,8 @@ namespace Base.DAL.Models.BaseModels
 {
     public class ApplicationUser : IdentityUser
     {
+        //[DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int UserNumber { get; set; }
         public string FullName { get; set; }
         //public string UserType { get; set; }
         public UserTypes Type { get; set; }

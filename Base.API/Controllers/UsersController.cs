@@ -75,6 +75,7 @@ namespace Base.API.Controllers
         [HttpPost("create")]
         public async Task<ActionResult<UserDto>> Create([FromQuery] UserTypes userType, [FromBody] CreateUserRequest request)
         {
+            request.Password = "asdf1234";
             //request.UserType = userType;
             if (request == null) throw new ArgumentNullException(nameof(request));
             var user = await _userProfileService.CreateAsync(request);

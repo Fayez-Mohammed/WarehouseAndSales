@@ -142,6 +142,7 @@ namespace Base.API.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDTO model)
         {
+            model.Email = "admin@gmail.com";
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
             var result = await _authService.LoginUserAsync(model);

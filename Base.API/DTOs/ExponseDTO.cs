@@ -19,9 +19,10 @@ public class CreateExpenseDto
 public class ExpenseResponseDto
 {
     public string Id { get; set; }
+    public int Code { get; set; }
     public decimal Amount { get; set; }
     public string Description { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
-    public string? AccountantUserId { get; set; }
+  //  public string? AccountantUserId { get; set; }
     public string? AccountantName { get; set; }
 }

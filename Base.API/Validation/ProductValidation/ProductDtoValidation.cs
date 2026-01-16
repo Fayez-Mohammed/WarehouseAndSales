@@ -14,8 +14,8 @@ public class ProductDtoValidation : AbstractValidator<ProductDto>
       .GreaterThan(0);
     RuleFor(x => x.ProductName)
       .NotEmpty();
-    RuleFor(x => x.SKU)
-      .NotEmpty();
+    //RuleFor(x => x.SKU)
+    //  .NotEmpty();
   }
 }
 public class ProductWithCategoryNameDtoValidation : AbstractValidator<ProductWithCategoryNameDto>
@@ -29,7 +29,7 @@ public class ProductWithCategoryNameDtoValidation : AbstractValidator<ProductWit
       .GreaterThan(0);
     RuleFor(x => x.ProductName)
       .NotEmpty();
-    RuleFor(x => x.SKU)
-      .NotEmpty();
+    //RuleFor(x => x.SKU)
+    //  .NotEmpty();
   }
 }

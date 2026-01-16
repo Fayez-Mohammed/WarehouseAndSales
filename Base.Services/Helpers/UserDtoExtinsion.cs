@@ -20,6 +20,7 @@ namespace Base.Services.Helpers
             return new UserDto
             {
                 Id = user.Id,
+                UserNumber =user.UserNumber,
                 FullName = user.FullName,
                 UserName = user.UserName ?? "NA",
                 Email = user.Email ?? "NA",
@@ -46,12 +47,12 @@ namespace Base.Services.Helpers
             {
                 return new ApplicationUser();
             }
-
+            string username = Dto.FullName.Replace(" ", "");
             return new ApplicationUser
             {
                 FullName = Dto.FullName,
-                UserName = Dto.Email ?? "NA",
-                Email = Dto.Email ?? "NA",
+                UserName = username ?? "NA",
+               // Email = Dto.Email ?? "NA",
                 PhoneNumber = Dto.PhoneNumber,
                 Type = Dto.UserType,
             };

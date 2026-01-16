@@ -77,23 +77,23 @@ namespace Base.API.Services
             services.AddIdentity<ApplicationUser, IdentityRole>(options =>
             {
                 // Sign-in
-                options.SignIn.RequireConfirmedEmail = true;
+                options.SignIn.RequireConfirmedEmail = false;
 
                 // Password policy - اضبطها حسب متطلبات الأمن بالمؤسسة
                 options.Password.RequireDigit = false;
                 options.Password.RequireLowercase = false;
                 options.Password.RequireUppercase = false;
                 options.Password.RequireNonAlphanumeric = false;
-                options.Password.RequiredLength = 6;
+                options.Password.RequiredLength = 0;
                 options.Password.RequiredUniqueChars = 0;
 
                 // Lockout
                 options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
-                options.Lockout.MaxFailedAccessAttempts = 5;
+                options.Lockout.MaxFailedAccessAttempts = 30;
                 options.Lockout.AllowedForNewUsers = true;
 
                 // User
-                options.User.RequireUniqueEmail = true;
+                options.User.RequireUniqueEmail = false;
             })
             .AddEntityFrameworkStores<AppDbContext>()
             .AddDefaultTokenProviders();

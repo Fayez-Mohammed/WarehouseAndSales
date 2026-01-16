@@ -5,6 +5,7 @@
         CustomerInvoice = 1,
         CommissionInvoice = 2,
         SupplierInvoice = 3,
-        ReturnInvoice = 4
+        ReturnInvoice = 4,
+        SupplierReturnInvoice = 5
     }
 }

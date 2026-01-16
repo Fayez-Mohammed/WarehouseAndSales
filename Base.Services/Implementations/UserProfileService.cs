@@ -39,9 +39,13 @@ namespace Base.Services.Implementations
         }
         public async Task<UserDto> CreateAsync(CreateUserRequest request)
         {
+            var lastNumber = await _userManager.Users
+       .MaxAsync(u => (int?)u.UserNumber) ?? 0;
             var user = request.ToApplicationUser();
+            user.UserNumber = lastNumber + 1;
             user.IsActive = true;
             user.EmailConfirmed = true;
+            user.UserName = (lastNumber + 1).ToString();
             var result = await _userManager.CreateAsync(user, request.Password);
 
             if (!result.Succeeded)
