@@ -662,6 +662,84 @@ namespace Base.API.Controllers
                 return StatusCode(500, new { Message = "Error searching customers" });
             }
         }
+        [HttpGet("SalesRep/autocomplete")]
+        public async Task<IActionResult> GetSalesRepSuggestions([FromQuery] string term)
+        {
+            if (string.IsNullOrWhiteSpace(term))
+                return Ok(new List<object>());
+
+            try
+            {
+                // نستخدم IQueryable عشان البحث يتم في الداتابيز وميحملش كل الداتا في الميموري
+                var query = userManager.Users.AsNoTracking();
+
+                // 1. الفلترة:
+                // - النوع لازم يكون عميل (UserTypes.Customer) أو حسب ما انت مسجله في الـ Enum
+                // - الاسم أو رقم الهاتف يحتوي على كلمة البحث
+                query = query.Where(u =>
+                    u.Type == UserTypes.SalesRep && // تأكد أن هذا يطابق الـ Enum عندك
+                    (u.FullName.Contains(term))
+                );
+
+                // 2. الترتيب والتحجيم: هات أول 10 نتايج بس
+                var customers = await query
+                    .OrderBy(u => u.FullName)
+                    .Take(10)
+                    .Select(u => new
+                    {
+                        u.UserNumber,
+                        u.FullName
+                    })
+                    .ToListAsync();
+
+                return Ok(customers);
+            }
+            catch (Exception ex)
+            {
+                // _logger.LogError(ex, "Error searching customers");
+                return StatusCode(500, new { Message = "Error searching SalesRep" });
+            }
+
+        }
+        [HttpGet("Supplier/autocomplete")]
+        public async Task<IActionResult> GetSupplierRepSuggestions([FromQuery] string term)
+        {
+            if (string.IsNullOrWhiteSpace(term))
+                return Ok(new List<object>());
+
+            try
+            {
+                // نستخدم IQueryable عشان البحث يتم في الداتابيز وميحملش كل الداتا في الميموري
+                var query = userManager.Users.AsNoTracking();
+
+                // 1. الفلترة:
+                // - النوع لازم يكون عميل (UserTypes.Customer) أو حسب ما انت مسجله في الـ Enum
+                // - الاسم أو رقم الهاتف يحتوي على كلمة البحث
+                query = query.Where(u =>
+                    u.Type == UserTypes.Supplier && // تأكد أن هذا يطابق الـ Enum عندك
+                    (u.FullName.Contains(term))
+                );
+
+                // 2. الترتيب والتحجيم: هات أول 10 نتايج بس
+                var customers = await query
+                    .OrderBy(u => u.FullName)
+                    .Take(10)
+                    .Select(u => new
+                    {
+                        u.UserNumber,
+                        u.FullName
+                    })
+                    .ToListAsync();
+
+                return Ok(customers);
+            }
+            catch (Exception ex)
+            {
+                // _logger.LogError(ex, "Error searching customers");
+                return StatusCode(500, new { Message = "Error searching Supplier" });
+            }
+
+        }
     }
 }
 

@@ -256,9 +256,12 @@ namespace Base.API.Controllers
             var supplier = await query2.FirstAsync();
             if (supplier == null || !await userManager.IsInRoleAsync(supplier, "Supplier"))
                 return BadRequest("Invalid Supplier Name.");
-       
-      
-           
+
+
+            var supplierRepo = _unitOfWork.Repository<Supplier>();
+            var specSupplier = new BaseSpecification<Supplier>(s => s.UserId == supplier.Id);
+            var supplierEntity = await supplierRepo.GetEntityWithSpecAsync(specSupplier);
+            if(supplierEntity == null) return BadRequest("Invalid Supplier.");
             decimal totalReturnAmount = 0;
             var productRepo = _unitOfWork.Repository<Product>();
             var stockTransactionRepo = _unitOfWork.Repository<StockTransaction>();
@@ -274,7 +277,9 @@ namespace Base.API.Controllers
                 if (product == null)
                     return BadRequest($"Product '{item.ProductName}' not found.");
 
-               
+               if(product.SupplierId!=supplierEntity.Id)
+                   return BadRequest($"Product '{item.ProductName}' does not belong to the specified supplier.");
+
                 if (product.CurrentStockQuantity < item.Quantity)
                 {
                     return BadRequest($"Insufficient stock for '{product.Name}'. Current: {product.CurrentStockQuantity}, Return Requested: {item.Quantity}");
@@ -288,7 +293,7 @@ namespace Base.API.Controllers
                 var transaction = new StockTransaction
                 {
                     ProductId = product.Id,
-                    SupplierId = supplier.Id,
+                    SupplierId = supplierEntity.Id,
                     StoreManagerId = User.FindFirstValue(ClaimTypes.NameIdentifier), 
                     Type = TransactionType.ReturnToSupplier, 
                     Quantity = -item.Quantity,
@@ -303,9 +308,7 @@ namespace Base.API.Controllers
                 totalReturnAmount += (product.BuyPrice * item.Quantity);
             }
 
-            var supplierRepo = _unitOfWork.Repository<Supplier>();
-            var specSupplier = new BaseSpecification<Supplier>(s => s.UserId == supplier.Id);
-            var supplierEntity = await supplierRepo.GetEntityWithSpecAsync(specSupplier);
+
             var returnInvoice = new SupplierInvoice
             {
                 SupplierId = supplierEntity.Id,
@@ -318,12 +321,16 @@ namespace Base.API.Controllers
             };
 
             await _unitOfWork.Repository<SupplierInvoice>().AddAsync(returnInvoice);
+            try
+            {
+                // 7. Save All Changes (Atomic Transaction)
+                var result = await _unitOfWork.CompleteAsync();
 
-            // 7. Save All Changes (Atomic Transaction)
-            var result = await _unitOfWork.CompleteAsync();
-
-            if (result <= 0) return StatusCode(500, "Failed to process return.");
-
+                if (result <= 0) return StatusCode(500, "Failed to process return.");
+            }
+            catch (Exception ex) {
+                return StatusCode(500, $"Error processing return: {ex.Message}");
+            }
             return Ok(new
             {
                 Message = "Return processed successfully",
